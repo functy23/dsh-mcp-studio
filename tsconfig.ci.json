@@ -1,0 +1,12 @@
+{
+  // CI 专用：在「没有宿主模块」的干净检出上做类型检查。
+  // 与 tsconfig.json 的唯一区别是 include 多收了 types/host-modules.d.ts（把 @deepseek-ai/* 变成 any）。
+  // 本地开发请继续用 tsconfig.json，那里能解析到真实类型。
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "types/**/*.d.ts",
+    ".test/**/*.ts"
+  ]
+}

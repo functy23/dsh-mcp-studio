@@ -88,6 +88,7 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck:ci": "tsc -p tsconfig.ci.json --noEmit",
     "build": "node scripts/build.mjs",
     "test": "node scripts/run-tests.mjs",
     "check": "node scripts/build.mjs",

@@ -23,7 +23,9 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
+      # CI 机器上没有 DSH 宿主，`@deepseek-ai/*` 解析不到；tsconfig.ci.json 把它们当 any，
+      # 只检查本仓库自己的代码（本地的 pnpm typecheck 仍解析真实类型，见 README 开发段）。
+      - run: pnpm typecheck:ci
       - run: pnpm test
       - run: pnpm build
       - name: 产物自检（不得出现 Tauri 运行时）

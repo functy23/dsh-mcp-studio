@@ -128,10 +128,14 @@ pnpm install --dir ~/.dsh/profiles/<profile>
 
 ```sh
 pnpm install
-pnpm typecheck     # tsc --noEmit（当前全绿）
+pnpm typecheck     # tsc --noEmit，解析宿主真实类型（当前全绿）
 pnpm build         # node scripts/build.mjs → lib/index.js + lib/client.js
 pnpm test          # node scripts/run-tests.mjs（vitest；见下方说明）
 ```
+
+> GitHub Actions 上跑的是 `pnpm typecheck:ci`：CI 机器没有 DSH 宿主，`@deepseek-ai/*` 解析不到，
+> `tsconfig.ci.json` 用 `types/host-modules.d.ts` 把它们声明成 any，从而只检查**本仓库自己的代码**。
+> 宿主 API 的真实签名漂移由本地 `pnpm typecheck`（`tsconfig.json`）负责——两者是互补关系。
 
 > `pnpm test` 不是裸 `vitest run`：vite 加载的 rollup 原生绑定既没签名，DSH 自带 Node 又带
 > hardened runtime，两处都会让 `dlopen` 失败。包装脚本 `scripts/run-tests.mjs` 会先补一次 ad-hoc 签名，
