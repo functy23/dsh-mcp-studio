@@ -29,6 +29,8 @@
 
 - SKILL.md frontmatter 的写入与就地重写共用一套构造（原来两处各拼一遍、已开始分叉），并补 13 条契约测试。
 - 新增 `scripts/run-tests.mjs`：给 rollup 原生绑定补 ad-hoc 签名 + 挑一个不带 hardened runtime 的 Node 跑 vitest。
+- 新增 GitHub Actions CI（`typecheck` / `test` / `build` + 产物不得含 `__TAURI__` 的自检），README 头部换成
+  徽章版式并加项目图标（`assets/icon.png`）。
 
 ## [1.0.0] — 2026-09-26
 
@@ -42,6 +44,8 @@
   （`dsh-tauri` / `dsh-tauri/client` / `dsh-tauri-ui/client`），因此上游源码无需改动 import。
 - **跨端支持**：插件不再依赖 Tauri 运行时；profile 探测补齐 `DSH_PROFILE` / `DSH_PROFILE_DIR` / 启动参数，
   Web 与 Desktop profile 都能正确读写自己的 `cordis.patch.yml`。
+  > 更正（1.0.1）：host 半确实是通用的，但**客户端半只声明了 `dsh.client.platform: web`**，
+  > 桌面版（Electra 客户端）不会出现「扩展」入口。安装以 README 为准，只装 Web profile。
 - **独立标识**：插件 id 与路由前缀改为 `dsh-mcp-studio`（`/dsh-mcp-studio/api/*`），可与 Tauri 版插件共存。
 
 

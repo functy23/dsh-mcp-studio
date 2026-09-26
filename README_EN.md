@@ -1,10 +1,24 @@
-# dsh-mcp-studio
-
 <div align="center">
 
-**The MCP server & Skills manager for DeepSeek Harness — the Tauri desktop edition's extension panel, consolidated into one cross-platform plugin.**
+<img src="assets/icon.png" alt="dsh-mcp-studio" width="128" />
 
-<code>Original panel UI, unmodified</code> <code>No Tauri runtime dependency</code> <code>Web / Desktop / Tauri</code>
+# dsh-mcp-studio
+
+**The MCP server & Skills manager for DeepSeek Harness — the Tauri desktop edition's extension panel, consolidated into one plugin.**
+
+[![dsh-mcp-studio](https://img.shields.io/badge/dsh--mcp--studio-DSH%20plugin-4d6bfe.svg)](https://github.com/functy23/dsh-mcp-studio)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Top Language](https://img.shields.io/github/languages/top/functy23/dsh-mcp-studio?style=flat)](https://github.com/functy23/dsh-mcp-studio)
+[![Platform](https://img.shields.io/badge/platform-Web-lightgrey.svg)](https://github.com/functy23/dsh-mcp-studio)
+
+[![CI](https://img.shields.io/github/actions/workflow/status/functy23/dsh-mcp-studio/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white)](https://github.com/functy23/dsh-mcp-studio/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?logo=opensourceinitiative&logoColor=white)](https://opensource.org/licenses/MIT)
+
+[![Stars](https://img.shields.io/github/stars/functy23/dsh-mcp-studio?style=flat&logo=github)](https://github.com/functy23/dsh-mcp-studio/stargazers)
+[![Repo Size](https://img.shields.io/github/repo-size/functy23/dsh-mcp-studio?style=flat&logo=github)](https://github.com/functy23/dsh-mcp-studio)
+[![Contributors](https://img.shields.io/github/contributors/functy23/dsh-mcp-studio?color=ee8449&logo=githubsponsors)](https://github.com/functy23/dsh-mcp-studio/graphs/contributors)
+
+[Issues](https://github.com/functy23/dsh-mcp-studio/issues) • [Changelog](CHANGELOG.md) • [简体中文](README.md)
 
 </div>
 
@@ -56,11 +70,17 @@ Tauri-only code (invoke / listen / iframe bridges) stays vendored but unreferenc
 
 ## 🚀 Install
 
+**Web edition only, for now** — the package declares `dsh.client.platform: web` (the client half registers into the Web client):
+
 ```sh
-dsh plugin --profile desktop add dsh-mcp-studio@latest
-dsh plugin --profile web     add dsh-mcp-studio@latest
-dsh plugin --profile tauri   add dsh-mcp-studio@latest
+dsh plugin --profile web add dsh-mcp-studio@latest
 ```
+
+> **The desktop profile (`--profile desktop`) is not usable — do not install it there.** The desktop profile runs
+> the Electra client (client capabilities come from `@deepseek-ai/dsh-client-runtime`), while this plugin's client half
+> depends on the Web client's official modules (ui-layout / ui-primitives / ui-renderer / locale). The two are not
+> interchangeable: the 「扩展」sidebar entry will simply not appear. The Tauri edition is likewise out of scope —
+> this project vendors the Tauri edition's three packages, but does not replace its native plugins.
 
 Restart DSH once after a host-half update, then hard-refresh the browser.
 

@@ -1,0 +1,32 @@
+name: CI
+
+# 这个仓库有两处「机器可验证」的承诺，CI 就是它们的看门狗：
+#   pnpm typecheck 全绿、pnpm test 全绿（含面板 13 条路由的集成测试）、pnpm build 出两个产物。
+# 测试在 Linux 上没有 macOS 库验证的问题，scripts/run-tests.mjs 会自动挑可用的 Node。
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+      - name: 产物自检（不得出现 Tauri 运行时）
+        run: |
+          ! grep -q '__TAURI__' lib/index.js lib/client.js
+          test -f lib/index.js && test -f lib/client.js
