@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.0.2] — 2026-09-26
+
+### Added
+
+- **插件图标与显示名**（DSH 插件页此前显示的是默认风车占位图）：清单补 `icon: ./assets/icon.svg`，
+  并新增 `locale/en.json` / `locale/zh.json` 的 `meta.title` / `meta.description`，卡片不再回退成包名。
+  宿主约定：icon 必须是相对清单目录的路径、扩展名限 SVG/PNG/JPEG/WebP、上限 256 KiB、解析后不得越出包目录；
+  `files` 白名单已加上图标与 locale，否则 npm 安装的用户拿不到。
+
+### Changed
+
+- 包描述与 README 的 Platform 徽章改为与 `dsh.client.platform: web` 一致的表述（此前写作「Web / Desktop / Tauri 通用」）。
+
 ## [1.0.1] — 2026-09-26
 
 ### Fixed
