@@ -1,0 +1,10 @@
+packages:
+  - .
+
+allowBuilds:
+  esbuild: true
+
+# The DSH plugin runtime ships @deepseek-ai/* modules inside the host app; their
+# transitive graph is not on npm, so peer installation must stay off.
+autoInstallPeers: false
+minimumReleaseAge: 0
