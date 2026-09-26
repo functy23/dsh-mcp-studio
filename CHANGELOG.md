@@ -14,6 +14,16 @@
   Web 与 Desktop profile 都能正确读写自己的 `cordis.patch.yml`。
 - **独立标识**：插件 id 与路由前缀改为 `dsh-mcp-studio`（`/dsh-mcp-studio/api/*`），可与 Tauri 版插件共存。
 
+
+### Fixed
+
+- **「新建技能」在 DSH Web / Desktop 上不可用**：新版核心已把导航能力从 `workspaces` 上移走
+  （没有 `connectWorkspace` / `startSession`），上游「工作区 → 开新会话」链路必然报
+  「没有可用工作区」。现在优先复用活跃会话（预填组件本就注册在每个会话输入框上），
+  只有拿不到任何会话时才回退上游链路。
+- **预填草稿不出现**：`SkillCreatorPrefill` 的依赖里加上 `pendingSessionIds` 订阅，
+  复用已挂载的会话时 effect 也会重跑并写入草稿（上游靠新会话挂载触发，这条路径不存在了）。
+
 ### Notes
 
 - 上游代码版权与“禁止商业性二次开发”附加条款见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

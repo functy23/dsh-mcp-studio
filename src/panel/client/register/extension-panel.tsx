@@ -6,7 +6,7 @@ import { MARKET_SERVICE_NAME, PANEL_ACTION_ORDER, PANEL_ID } from '../constants'
 import { locale } from '../locales'
 import { currentScope, hostsMarketPanel, readMarket } from '../service/market'
 import { store } from '../store'
-import { chooseWorkspace, sessionSnapshotOf, workspaceSnapshotOf } from './extension-panel.utils'
+import { chooseWorkspace, pickSessionId, sessionSnapshotOf, workspaceSnapshotOf } from './extension-panel.utils'
 
 export const extensionPanelFeature = defineRegister<ClientContext>((controller, ctx, adapter) => {
   let panel: PanelHandle | undefined
@@ -27,16 +27,32 @@ export const extensionPanelFeature = defineRegister<ClientContext>((controller, 
     return () => face.setSettingsVisible(restore)
   })
 
+  // 技能创建器只需要一个有会话承载的预填：预填组件注册在每个会话输入框上
+  // （见 `skill-creator-prefill` 的 `inject: (sessionId) => ({ sessionId })`）。
+  //
+  // 上游只走「工作区 → connectWorkspace 开新会话」一条链路，但新版核心把导航能力从
+  // `workspaces` 上移走（没有 `connectWorkspace` / `startSession`），于是在 DSH Web /
+  // Desktop 上必然报「没有可用工作区」。这里改为优先复用活跃会话，只有拿不到任何会话时
+  // 才回退上游链路；`sessions.open` 同样按能力可选调用。
   const createSkill = async (): Promise<void> => {
-    const id = chooseWorkspace(
-      sessionSnapshotOf(adapter.sessions.list?.getSnapshot()),
-      workspaceSnapshotOf(adapter.workspaces.list?.getSnapshot()),
-    )
-    if (id === undefined)
+    const sessions = sessionSnapshotOf(adapter.sessions.list?.getSnapshot())
+    let sessionId = pickSessionId(adapter.sessions.list?.getSnapshot())
+    if (sessionId === undefined) {
+      const id = chooseWorkspace(sessions, workspaceSnapshotOf(adapter.workspaces.list?.getSnapshot()))
+      if (id !== undefined) {
+        const connected = await adapter.workspaces.connectWorkspace?.(id)
+        if (typeof connected === 'string' && connected !== '')
+          sessionId = connected
+      }
+    }
+    if (sessionId === undefined) {
+      // 拿不到任何会话时把实际服务面打到控制台：核心布局各代不同，便于一次定位。
+      console.warn('[dsh-mcp-studio] createSkill: no session available', {
+        sessions: adapter.sessions?.list?.getSnapshot?.(),
+        workspaces: adapter.workspaces?.list?.getSnapshot?.(),
+      })
       throw new Error(locale.text('workspaceUnavailable'))
-    const sessionId = await adapter.workspaces.connectWorkspace?.(id)
-    if (typeof sessionId !== 'string' || sessionId === '')
-      throw new Error(locale.text('workspaceUnavailable'))
+    }
     store.prefill.add(sessionId)
     panel?.close()
     adapter.sessions.open?.(sessionId)
