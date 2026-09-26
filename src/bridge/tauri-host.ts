@@ -22,6 +22,7 @@ export * from '../vendor/dsh-tauri/host/utils/open'
 export * from '../vendor/dsh-tauri/host/utils/atomic'
 export type { HostContext } from '../vendor/dsh-tauri/host/types/harness'
 export type {
+  HostRoute,
   HttpMethod,
   RouteDefinition,
   RouteDisposer,

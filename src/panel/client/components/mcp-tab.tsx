@@ -43,6 +43,8 @@ export function McpTab({ t }: McpTabProps): ReactElement {
         if (current) {
           setServers(body.servers)
           setGlobalError(body.globalError ?? '')
+          // 故意不碰 pending：列表是只读请求。重启条只在写入（保存/启停/删除/导入）之后出现，
+          // 并且一直留到用户真的重启——否则「一打开 MCP 页就提示需要重启」就是常驻噪音。
         }
       },
       (error: Error) => {
@@ -87,7 +89,7 @@ export function McpTab({ t }: McpTabProps): ReactElement {
         ? null
         : { ok: false, text: `${t('failed')}: ${failed.map(item => `${item.name} (${item.error})`).join(', ')}` })
       setImportOpen(false)
-      setPending(true)
+      setPending(body.restartNeeded)
       setReload(value => value + 1)
     }
     catch (error) {
@@ -214,10 +216,10 @@ export function McpTab({ t }: McpTabProps): ReactElement {
     setFormError(null)
     setPasteError(null)
     try {
-      await postMcp(input)
+      const body = await postMcp(input)
       setEditor(null)
       setOutcome(null)
-      reloadList(true)
+      reloadList(body.restartNeeded)
     }
     catch (error) {
       setFormError(String(error instanceof Error ? error.message : error))
@@ -230,9 +232,9 @@ export function McpTab({ t }: McpTabProps): ReactElement {
   const doToggle = async (row: McpRow): Promise<void> => {
     setBusy(true)
     try {
-      await postMcpToggle({ id: row.id, disabled: !row.disabled })
+      const body = await postMcpToggle({ id: row.id, disabled: !row.disabled })
       setOutcome(null)
-      reloadList(true)
+      reloadList(body.restartNeeded)
     }
     catch (error) {
       setOutcome({ ok: false, text: `${t('failed')}: ${String(error instanceof Error ? error.message : error)}` })
@@ -247,9 +249,9 @@ export function McpTab({ t }: McpTabProps): ReactElement {
       return
     setBusy(true)
     try {
-      await deleteMcp({ id: confirmId })
+      const body = await deleteMcp({ id: confirmId })
       setOutcome(null)
-      reloadList(true)
+      reloadList(body.restartNeeded)
     }
     catch (error) {
       setOutcome({ ok: false, text: `${t('failed')}: ${String(error instanceof Error ? error.message : error)}` })
@@ -364,11 +366,11 @@ export function McpTab({ t }: McpTabProps): ReactElement {
       {servers !== null && servers.length === 0 && <p className="dshp-extension__empty">{t('emptyMcp')}</p>}
       {servers !== null && servers.length > 0 && (
         <ul className="dshp-extension__cards">
-          {servers.filter(row => scope === 'all' || (row.layer ?? 'profile') === scope).map(row => (
+          {servers.filter(row => scope === 'all' || (row.scope ?? 'profile') === scope).map(row => (
             <li className="dshp-extension__card" key={row.id}>
               <div className="dshp-extension__card-top">
                 <strong className="dshp-extension__card-title" title={row.id}>{row.serverName}</strong>
-                <Tag tone={(row.scope ?? row.layer) === 'global' ? 'info' : 'neutral'}>{(row.scope ?? row.layer) === 'global' ? t('scopeGlobal') : t('scopeProfile')}</Tag>
+                <Tag tone={(row.scope ?? 'profile') === 'global' ? 'info' : 'neutral'}>{(row.scope ?? 'profile') === 'global' ? t('scopeGlobal') : t('scopeProfile')}</Tag>
                 <Tag tone="neutral">{row.transport}</Tag>
                 <Tag tone={row.disabled ? 'warning' : 'neutral'}>{row.disabled ? t('disabled') : t('enabled')}</Tag>
               </div>

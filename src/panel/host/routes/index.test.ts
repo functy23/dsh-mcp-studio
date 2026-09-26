@@ -17,7 +17,8 @@ vi.mock('dsh-tauri', async (importOriginal) => {
   return { ...actual, DSH_HOME: home }
 })
 
-const P = '/api/desktop/dsh-tauri-panel-extension'
+// 路由前缀随插件 id 走：搬运后是 /dsh-mcp-studio/api（原上游是 /api/desktop/dsh-tauri-panel-extension）
+const P = '/dsh-mcp-studio/api'
 
 const routeKey = (kind: string, path: string): string => `${kind}\u0000${path}`
 
@@ -226,12 +227,12 @@ describe('能力管理器路由声明', () => {
     dispose()
   })
 
-  it('gET /mcp 在空的 patch 层上返回空列表并带 restartNeeded', async () => {
+  it('gET /mcp 在空的 patch 层上返回空列表（只读响应不带 restartNeeded）', async () => {
     const { base, dispose } = await start()
 
     const response = await fetch(`${base}${P}/mcp`)
     expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({ servers: [], restartNeeded: true })
+    expect(await response.json()).toEqual({ servers: [] })
 
     dispose()
   })

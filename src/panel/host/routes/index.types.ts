@@ -47,7 +47,6 @@ export interface SkillSourceView {
   path?: string
   roots: string[]
   materialDir?: string
-  addedAt: number
   live: boolean
 }
 
@@ -69,7 +68,6 @@ export interface ImportedServerView {
 
 export interface McpRowView {
   id: string
-  layer?: 'global' | 'profile'
   shadowed?: boolean
   scope?: 'global' | 'profile'
   serverName: string
@@ -86,7 +84,6 @@ export interface McpRowView {
 export interface McpListResponse {
   servers: McpRowView[]
   globalError?: string
-  restartNeeded: boolean
 }
 
 export interface McpSaveResponse {
@@ -102,7 +99,8 @@ export interface McpActionResult {
 
 export interface McpCheckResponse {
   ok: boolean
-  detail: string
+  /** 失败原因 / 命中的可执行路径；服务层可能拿不到，故可选。 */
+  detail?: string
 }
 
 export interface McpImportScanResponse {
@@ -182,4 +180,16 @@ export interface McpCheckBody {
 export interface McpImportApplyBody {
   items: Array<{ agent: string, name: string }>
   scope?: 'global' | 'profile'
+}
+
+/** POST /api/mcp/copy 的请求体：把一行从 scope 复制到 toScope。 */
+export interface McpCopyBody {
+  id?: string
+  scope?: 'global' | 'profile'
+  toScope?: 'global' | 'profile'
+}
+
+/** GET /api/skill 的查询串（`?name=`）。 */
+export interface GetSkillQuery {
+  name?: string
 }

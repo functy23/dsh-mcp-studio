@@ -1,6 +1,6 @@
 {
   "name": "dsh-mcp-studio",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "DeepSeek Harness 的 MCP 服务与 Skills 管理器：把 Tauri 桌面版的扩展面板（MCP / Skills / 插件市场）连同其依赖整合成一个插件，Web / Desktop / Tauri 通用。",
   "type": "module",
   "main": "lib/index.js",
@@ -82,13 +82,14 @@
     "@types/react": "^18.3.12",
     "esbuild": "^0.28.2",
     "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "node scripts/build.mjs",
-    "test": "vitest run",
+    "test": "node scripts/run-tests.mjs",
     "check": "node scripts/build.mjs",
     "prepack": "node scripts/build.mjs"
   },

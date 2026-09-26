@@ -63,12 +63,11 @@ export const skills = defineService({
     return (await readSources()).find(entry => entry.url === url) ?? null
   },
 
-  async saveSource(entry: Omit<SkillSourceEntry, 'addedAt'>): Promise<SkillSourceEntry> {
+  async saveSource(entry: SkillSourceEntry): Promise<SkillSourceEntry> {
     const sources = await readSources()
-    const stored: SkillSourceEntry = { ...entry, addedAt: Date.now() }
-    sources.push(stored)
+    sources.push(entry)
     await writeSources(sources)
-    return stored
+    return entry
   },
 
   async removeSource(id: string): Promise<SkillSourceEntry | null> {

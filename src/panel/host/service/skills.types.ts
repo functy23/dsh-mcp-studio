@@ -53,7 +53,6 @@ export interface SkillSourceEntry {
   path?: string
   roots: string[]
   materialDir?: string
-  addedAt: number
 }
 
 export interface PluginState {

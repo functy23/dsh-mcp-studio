@@ -58,11 +58,22 @@ export function createLifecycleController(): LifecycleController {
   const hooks = createHooks<LifecycleHooks>()
   let isDisposed = false
   const activeTimeouts = new Set<ReturnType<typeof setTimeout>>()
+  /**
+   * 同步清理队列（登记顺序即执行顺序）。
+   *
+   * 为什么不直接用 `hooks.hook('dispose', …)`：hookable v5 的 `callHook` 是异步的
+   * （钩子要等一个微任务才跑到），而本控制器的契约是「dispose() 返回时资源已经释放」——
+   * 上游测试按同步语义断言（见 register/index.test.ts 的幂等 dispose 用例）。
+   * 所以登记走本地队列、dispose 里同步执行；hookable 只留给仍直接 hook 的调用方。
+   */
+  const disposers = new Set<() => void>()
   const controller: LifecycleController = {
     add(disposer) {
       if (isDisposed)
         return noop
       const safeDisposer = () => {
+        if (!disposers.delete(safeDisposer))
+          return
         try {
           disposer()
         }
@@ -70,8 +81,11 @@ export function createLifecycleController(): LifecycleController {
           console.error('[LifecycleController] Unhandled exception in disposer:', error)
         }
       }
+      disposers.add(safeDisposer)
 
-      return hooks.hook('dispose', safeDisposer)
+      return () => {
+        disposers.delete(safeDisposer)
+      }
     },
 
     timeout(fn, ms) {
@@ -147,7 +161,13 @@ export function createLifecycleController(): LifecycleController {
         clearTimeout(timer)
       activeTimeouts.clear()
 
-      // 2. 统一触发所有通过 controller.add / interval / listen / observe 挂载的资源销毁函数
+      // 同步执行（顺序 = 登记顺序）：dispose() 返回后监听 / 观察者 / 自定义 disposer 都已释放。
+      // 逐个跑而不是一次性清空队列：disposer 里再 add() 会被 isDisposed 拦掉，不会漏执行。
+      for (const run of [...disposers])
+        run()
+      disposers.clear()
+
+      // 兼容仍直接 hook('dispose') 的调用方；本控制器内部已不依赖它（v5 下是异步的）。
       void hooks.callHook('dispose')
       hooks.removeAllHooks()
     },

@@ -1,3 +1,4 @@
+import type { RestartOutcome } from '../../../service/restart.types'
 import { defineEventHandler } from 'dsh-tauri'
 import { restart } from '../../../service/restart'
 
@@ -25,5 +26,8 @@ export default defineEventHandler((event) => {
     event.res.status = 409
     return { error: 'restart is owned by the desktop shell' }
   }
-  return { ok: true, pid: outcome.pid, replacementPid: outcome.replacementPid, logOut: outcome.logOut }
+  // tsconfig 关掉了 strict（上游代码宽松）：strictNullChecks 关闭时 TS 不按 boolean 字面量
+  // 判别式收窄可辨识联合，上面那层 outcome.owned 的守卫在编译期不算数，所以显式取这一支。
+  const launched = outcome as Extract<RestartOutcome, { owned: false }>
+  return { ok: true, pid: launched.pid, replacementPid: launched.replacementPid, logOut: launched.logOut }
 })

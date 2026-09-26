@@ -1,7 +1,9 @@
-/*
- * @title dsh-mcp-studio
- * @swagger 2.0
- * @version 0.0.0
+/**
+ * 面板 HTTP API 的手写封装（ofetch）。返回类型全部来自 `./index.type`，也就是 host 的
+ * `routes/index.types.ts` —— 加/改字段时只需要改 host 一处，客户端自动跟上。
+ *
+ * 只保留真的有调用方的入口：没有消费方的包装函数（曾经有 mcp/copy、roots get/delete 三个）
+ * 会让「接口存在」与「功能可用」两件事看起来一样，改起来还得先判断谁在用。
  */
 
 import type { FetchOptions } from "dsh-tauri/client";
@@ -30,11 +32,6 @@ export function postMcpCheck(body: Types.McpCheckBody, options?: FetchOptions) {
   return ofetch<Types.McpCheckResult>("/mcp/check", { baseURL, method: "post", body, ...options });
 }
 
-/** @method post */
-export function postMcpCopy(body: Types.McpCopyBody, options?: FetchOptions) {
-  return ofetch<void>("/mcp/copy", { baseURL, method: "post", body, ...options });
-}
-
 /** @method get */
 export function getMcp(options?: FetchOptions) {
   return ofetch<Types.McpListResponse>("/mcp", { baseURL, method: "get", ...options });
@@ -60,19 +57,9 @@ export function postOpenDir(body: Types.SkillOpenBody, options?: FetchOptions) {
   return ofetch<Types.ActionResult>("/open/dir", { baseURL, method: "post", body, ...options });
 }
 
-/** @method get */
-export function getRoots(options?: FetchOptions) {
-  return ofetch<void>("/roots", { baseURL, method: "get", ...options });
-}
-
 /** @method post */
 export function postRoots(body: Types.RootAddBody, options?: FetchOptions) {
   return ofetch<Types.RootAddResponse>("/roots", { baseURL, method: "post", body, ...options });
-}
-
-/** @method delete */
-export function deleteRoots(body: Types.RootRemoveBody, options?: FetchOptions) {
-  return ofetch<Types.ActionResult>("/roots", { baseURL, method: "delete", body, ...options });
 }
 
 /** @method get */

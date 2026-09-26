@@ -2,7 +2,7 @@ import type { ImportedServer } from './agents.types'
 import { existsSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { defineService } from 'dsh-tauri'
-import { compact, filter, isEmpty, isObject, isString, pickBy, uniqBy } from 'lodash-es'
+import { compact, filter, isEmpty, isObject, pickBy, uniqBy } from 'lodash-es'
 import { join } from 'pathe'
 import { parse as parseToml } from 'smol-toml'
 
@@ -33,17 +33,28 @@ export const agents = defineService({
 
 // --- internal ---
 
+/**
+ * 字符串判定（类型守卫版）。
+ *
+ * 不用 lodash 的 isString：lodash-es 没带类型声明，它是 any，在 tsconfig 关掉 strict 的
+ * 配置下 TS 不会因此把 unknown 收窄成 string（实测 TS2322：unknown 不能赋给 string），
+ * 于是「运行时判过、编译期没判过」的字段就会一路报错。守卫自带类型谓词，两边一致。
+ */
+function isText(value: unknown): value is string {
+  return typeof value === 'string'
+}
+
 function stringEntries(value: unknown): Record<string, string> | undefined {
   if (!isObject(value) || Array.isArray(value))
     return undefined
-  const out = pickBy(value as Record<string, unknown>, isString)
+  const out = pickBy(value as Record<string, unknown>, isText)
   return isEmpty(out) ? undefined : out
 }
 
 function stringArray(value: unknown): string[] | undefined {
   if (!Array.isArray(value))
     return undefined
-  const out = filter(value, isString)
+  const out = filter(value, isText)
   return isEmpty(out) ? undefined : out
 }
 
@@ -51,9 +62,9 @@ function mapMcpServersEntry(agent: ImportedServer['agent'], name: string, entry:
   if (!isObject(entry))
     return null
   const record = entry as Record<string, unknown>
-  const type = isString(record.type) ? record.type : 'stdio'
+  const type = isText(record.type) ? record.type : 'stdio'
   if (type === 'stdio') {
-    if (!isString(record.command) || record.command === '')
+    if (!isText(record.command) || record.command === '')
       return null
     return {
       agent,
@@ -65,7 +76,7 @@ function mapMcpServersEntry(agent: ImportedServer['agent'], name: string, entry:
     }
   }
   if (type === 'http' || type === 'streamable-http') {
-    if (!isString(record.url) || record.url === '')
+    if (!isText(record.url) || record.url === '')
       return null
     return {
       agent,
@@ -87,7 +98,7 @@ function mapAgentEntry(
   if (!isObject(entry))
     return null
   const record = entry as Record<string, unknown>
-  if (isString(record.command) && record.command !== '') {
+  if (isText(record.command) && record.command !== '') {
     return {
       agent,
       name,
@@ -98,7 +109,7 @@ function mapAgentEntry(
     }
   }
   const url = record[urlKey]
-  if (isString(url) && url !== '')
+  if (isText(url) && url !== '')
     return { agent, name, transport: 'streamable-http', url }
   return null
 }

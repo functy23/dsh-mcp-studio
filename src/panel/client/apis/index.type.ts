@@ -1,164 +1,42 @@
-export type McpApplyImportResponse = {
-  ok: boolean;
-  results: Array<{ name: string; ok: boolean; error?: string }>;
-  restartNeeded: boolean;
-};
-export type McpImportScanResponse = {
-  servers: ImportedServerView[];
-  existing: string[];
-};
-export type ImportedServerView = {
-  agent: "claude-code" | "codex" | "cursor" | "gemini";
-  name: string;
-  transport: "stdio" | "streamable-http";
-  command?: string;
-  args?: string[];
-  env?: Record<string, string>;
-  url?: string;
-  headers?: Record<string, string>;
-};
-export type McpCheckResult = {
-  ok: boolean;
-  detail?: string;
-};
-export type McpActionResult = {
-  ok: boolean;
-  restartNeeded: boolean;
-};
-export type McpListResponse = {
-  servers: McpRowView[];
-  globalError?: string;
-  restartNeeded: boolean;
-};
-export type McpRowView = {
-  id: string;
-  layer?: "global" | "profile";
-  shadowed?: boolean;
-  scope?: "global" | "profile";
-  serverName: string;
-  transport: "stdio" | "streamable-http";
-  disabled: boolean;
-  command?: string;
-  args?: string[];
-  env?: Record<string, string>;
-  cwd?: string;
-  url?: string;
-  headers?: Record<string, string>;
-};
-export type McpSaveResponse = {
-  ok: boolean;
-  id: string;
-  restartNeeded: boolean;
-};
-export type ActionResult = {
-  ok: boolean;
-  error?: string;
-};
-export type RootAddResponse = {
-  ok: boolean;
-  root: SkillSourceView;
-};
-export type SkillSourceView = {
-  id: string;
-  kind: "local" | "git";
-  label: string;
-  url?: string;
-  ref?: string;
-  path?: string;
-  roots: string[];
-  materialDir?: string;
-  addedAt: number;
-  live: boolean;
-};
-export type SkillContentResponse = {
-  name: string;
-  content: string;
-};
-export type SkillsResponse = {
-  skills: SkillRowView[];
-};
-export type SkillRowView = {
-  name: string;
-  description: string;
-  whenToUse?: string;
-  invocation: { modelInvocable: boolean; userInvocable: boolean };
-  source: string;
-  provider: string;
-  editable: boolean;
-  removable: boolean;
-  dir?: string;
-  policyEditable: boolean;
-  repository?: SkillRepositoryView;
-};
-export type SkillRepositoryView = {
-  id: string;
-  label: string;
-  kind: "local" | "git";
-  githubUrl?: string;
-};
+/**
+ * 客户端类型层 = 宿主线协议的**再导出**，不是第二份手写定义。
+ *
+ * 为什么这么改：这一层原来是 OpenAPI 生成器的产物（原文件头写着 @swagger 2.0），
+ * 但仓库里没有生成器，于是 host 的 routes/index.types.ts 与这份副本各写一遍同一条线协议；
+ * 两边一旦不同步就会产生「客户端按某字段过滤、服务端根本不发这个字段」的静默缺陷
+ * （历史上就有 layer 这一例，见 CHANGELOG）。现在 host 是唯一权威，这里只做名字对齐。
+ *
+ * 只用 export type：类型在 esbuild 里被擦除，客户端产物不会因此把 host 代码带进来。
+ */
+export type {
+  ActionResult,
+  GetSkillQuery,
+  ImportedServerView,
+  McpActionResult,
+  McpApplyImportResponse,
+  McpCheckBody,
+  McpCopyBody,
+  McpImportApplyBody,
+  McpImportScanResponse,
+  McpListResponse,
+  McpRemoveBody,
+  McpRowView,
+  McpSaveBody,
+  McpSaveResponse,
+  McpToggleBody,
+  RootAddBody,
+  RootAddResponse,
+  RootRemoveBody,
+  SkillContentResponse,
+  SkillDeleteBody,
+  SkillOpenBody,
+  SkillPolicyBody,
+  SkillRepositoryView,
+  SkillRowView,
+  SkillSaveBody,
+  SkillSourceView,
+  SkillsResponse,
+} from '../../host/routes/index.types'
 
-export interface McpImportApplyBody {
-  items: { agent: string; name: string }[];
-  scope?: string;
-}
-export interface McpCheckBody {
-  id: string;
-  scope?: string;
-}
-export interface McpCopyBody {
-  id?: string;
-  scope?: string;
-  toScope?: string;
-}
-export interface McpRemoveBody {
-  id: string;
-  scope?: string;
-}
-export interface McpSaveBody {
-  id: string;
-  serverName: string;
-  transport: string;
-  command?: string;
-  args?: string[];
-  env?: Record<string, string>;
-  cwd?: string;
-  url?: string;
-  headers?: Record<string, string>;
-  scope?: string;
-}
-export interface McpToggleBody {
-  id: string;
-  disabled: boolean;
-  scope?: string;
-}
-export interface SkillOpenBody {
-  target: string;
-  name?: string;
-  id?: string;
-}
-export interface RootRemoveBody {
-  id: string;
-}
-export interface RootAddBody {
-  kind: string;
-  path?: string;
-  url?: string;
-}
-export interface SkillDeleteBody {
-  name: string;
-}
-export interface SkillSaveBody {
-  name: string;
-  description: string;
-  whenToUse?: string;
-  modelInvocable?: boolean;
-  userInvocable?: boolean;
-  content: string;
-}
-export interface SkillPolicyBody {
-  name: string;
-  enabled: boolean;
-}
-export interface GetSkillQuery {
-  name?: string;
-}
+/** 检查接口的返回体：host 里叫 McpCheckResponse，客户端既有写法沿用 McpCheckResult。 */
+export type { McpCheckResponse as McpCheckResult } from '../../host/routes/index.types'

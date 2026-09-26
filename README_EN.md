@@ -31,20 +31,26 @@ cross-platform support are applied. **No UI was rewritten.**
 ## ✨ How the integration works
 
 ```
-src/panel/            the extension panel, verbatim (host services + routes, client components/register/locales/styles)
-src/vendor/dsh-tauri/ the framework bridge it imports, verbatim (Tauri-only invoke/iframe modules stay unused)
-src/vendor/dsh-tauri-ui/ the components it imports, verbatim
-src/bridge/           build-time module mapping: old bare specifier → local file
+src/                  ← live code: everything reachable from the product entries
+  panel/              the extension panel, verbatim (host services + routes, client components/register/locales/styles)
+  vendor/dsh-tauri/   the framework bridge it imports, verbatim (Tauri-only invoke/iframe modules stay unused)
+  vendor/dsh-tauri-ui/ the components it imports, verbatim
+  bridge/             build-time module mapping: old bare specifier → local file
+
+vendor-archive/       ← vendored subtrees unreachable from the product entries (Tauri-only bridges,
+                        tests of modules that were never vendored); out of build / typecheck / tests
 ```
 
 Two artifacts: `lib/index.js` (host half, ESM) and `lib/client.js` (client half, DSH ModuleLoader CJS).
 
-### Cross-platform changes (three, all minimal)
+### Cross-platform changes (three adaptations + behaviour fixes)
 
 1. **Module mapping** — `dsh-tauri`, `dsh-tauri/client`, `dsh-tauri-ui/client` resolve to `src/bridge/*`, so upstream imports are untouched.
 2. **Profile detection** — upstream only honoured `--profile`; `DSH_PROFILE`, `DSH_PROFILE_DIR` and the
    `<DSH_HOME>/profiles/<name>` launcher argument are now detected too, so MCP rows land in the right profile.
 3. **Own identity** — plugin id and route prefix are `dsh-mcp-studio` (`/dsh-mcp-studio/api/*`), so it coexists with the Tauri plugin.
+4. **"New skill" flow** — the current core moved navigation off `workspaces`; the panel now reuses an active
+   session first and only falls back to the upstream path (see [CHANGELOG.md](CHANGELOG.md)).
 
 Tauri-only code (invoke / listen / iframe bridges) stays vendored but unreferenced: the bundle never touches `window.__TAURI__`.
 
@@ -69,12 +75,20 @@ The sidebar shows **扩展** (Puzzle icon) with the original three-tab panel:
 
 ```sh
 pnpm install
-pnpm typecheck
+pnpm typecheck     # tsc --noEmit (currently clean)
 pnpm build         # node scripts/build.mjs → lib/index.js + lib/client.js
+pnpm test          # node scripts/run-tests.mjs (vitest; see below)
 ```
 
 > esbuild is used deliberately: the DSH runtime's Node enforces macOS library validation, and
 > rollup/rolldown `.node` bindings fail to dlopen (see [AGENTS.md](AGENTS.md)).
+>
+> `pnpm test` is not a bare `vitest run`: the rollup native binding that vite loads is unsigned and the
+> bundled DSH Node runs with the hardened runtime, so both ends fail `dlopen`. `scripts/run-tests.mjs`
+> signs the binding ad-hoc and then runs vitest under a Node without the hardened runtime.
+>
+> The old bare specifiers are mapped in three places — `scripts/build.mjs`, `tsconfig.json` and
+> `vitest.config.ts`: change all three together.
 
 ## 🙏 Credits
 

@@ -1,9 +1,7 @@
-import type { ExtensionRouteDeps } from '../../index.types'
+import type { ExtensionRouteDeps, McpCopyBody } from '../../index.types'
 import { defineEventHandler, dshRouteDepsOf, readBody } from 'dsh-tauri'
 import { mcp } from '../../../service/mcp'
 import { mcpRowToInput, mcpScopeDir, normalizeMcpScope } from '../../../service/mcp.utils'
-
-interface McpCopyBody { id?: unknown, scope?: unknown, toScope?: unknown }
 
 export default defineEventHandler(async (event) => {
   const deps = dshRouteDepsOf<ExtensionRouteDeps>(event)!

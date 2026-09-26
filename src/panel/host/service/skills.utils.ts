@@ -9,6 +9,12 @@ const SKILL_WHEN_TO_USE_MAX_LENGTH = 2048
 
 const SKILL_CONTENT_MAX_BYTES = 256 * 1024
 
+/** 受管 frontmatter 键：写回时先删掉，再由输入统一重建（避免同名键写两遍）。 */
+const MANAGED_KEY_RE = /^(?:name|description|whenToUse|disable-model-invocation|user-invocable):/
+
+/** 策略位键：只由 rewriteSkillPolicy 管，正文写入不碰。 */
+const POLICY_KEY_RE = /^(?:disable-model-invocation|user-invocable):/
+
 export function rootView(entry: SkillSourceEntry): SkillSourceView {
   return { ...entry, live: entry.roots.every(root => directoryExists(root)) }
 }
@@ -21,18 +27,8 @@ export function isSkillSourceEntry(entry: unknown): entry is SkillSourceEntry {
 }
 
 export function serializeSkill(input: SkillInput): string {
-  const lines = [
-    `name: ${input.name}`,
-    `description: ${JSON.stringify(input.description)}`,
-  ]
-  if (!isEmpty(input.whenToUse))
-    lines.push(`whenToUse: ${JSON.stringify(input.whenToUse)}`)
-  if (!input.modelInvocable)
-    lines.push('disable-model-invocation: true')
-  if (!input.userInvocable)
-    lines.push('user-invocable: false')
-  const body = input.content.replace(/\r\n/g, '\n').trim()
-  return `---\n${lines.join('\n')}\n---\n\n${body}\n`
+  const body = normalizedBody(input.content)
+  return `---\n${managedLines(input).join('\n')}\n---\n\n${body}\n`
 }
 
 export function validateSkillInput(input: SkillInput): string | null {
@@ -49,29 +45,53 @@ export function validateSkillInput(input: SkillInput): string | null {
   return null
 }
 
+/**
+ * 就地重写已有 SKILL.md 的 frontmatter。
+ *
+ * 与 serializeSkill 共用同一套受管键构造（`managedLines`），差别只有两点，都在这里显式化：
+ * 保留本工具不认识的键（上游/用户手写的扩展键不能吃），以及沿用原文件的换行风格。
+ */
 export function rewriteSkillContent(text: string, input: SkillInput): string {
   const { newline, lines } = frontmatterOf(text)
-  const kept = lines.filter(line => !/^(?:name|description|whenToUse|disable-model-invocation|user-invocable):/.test(line))
-  const head = [`name: ${input.name}`, `description: ${JSON.stringify(input.description)}`]
-  if (!isEmpty(input.whenToUse))
-    head.push(`whenToUse: ${JSON.stringify(input.whenToUse)}`)
-  if (!input.modelInvocable)
-    kept.push('disable-model-invocation: true')
-  if (!input.userInvocable)
-    kept.push('user-invocable: false')
-  const body = input.content.replace(/\r\n/g, '\n').trim()
-  return `---${newline}${[...head, ...kept].join(newline)}${newline}---${newline}${newline}${body}${newline}`
+  const unknown = lines.filter(line => !MANAGED_KEY_RE.test(line))
+  const body = normalizedBody(input.content)
+  return `---${newline}${managedLines(input, unknown).join(newline)}${newline}---${newline}${newline}${body}${newline}`
 }
 
 export function rewriteSkillPolicy(text: string, enabled: boolean): string {
   const { newline, lines, body } = frontmatterOf(text)
-  const kept = lines.filter(line => !/^(?:disable-model-invocation|user-invocable):/.test(line))
+  const kept = lines.filter(line => !POLICY_KEY_RE.test(line))
   if (!enabled)
     kept.push('disable-model-invocation: true', 'user-invocable: false')
   return `---${newline}${kept.join(newline)}${newline}---${body}`
 }
 
 // --- internal ---
+
+/**
+ * 受管 frontmatter 行（顺序固定：身份 → 触发说明 → 策略位），可选追加保留行。
+ *
+ * 写入（serializeSkill）与就地重写（rewriteSkillContent）都走这里：加字段时只改这一处，
+ * 两边不会再出现「一个写、一个不写」的分叉。
+ */
+function managedLines(input: SkillInput, extra: readonly string[] = []): string[] {
+  const lines = [
+    `name: ${input.name}`,
+    `description: ${JSON.stringify(input.description)}`,
+  ]
+  if (!isEmpty(input.whenToUse))
+    lines.push(`whenToUse: ${JSON.stringify(input.whenToUse)}`)
+  if (!input.modelInvocable)
+    lines.push('disable-model-invocation: true')
+  if (!input.userInvocable)
+    lines.push('user-invocable: false')
+  return [...lines, ...extra]
+}
+
+/** 正文统一成 LF 并去掉首尾空行：磁盘上的 SKILL.md 只保留一种换行，比较与 diff 才稳定。 */
+function normalizedBody(content: string): string {
+  return content.replace(/\r\n/g, '\n').trim()
+}
 
 function frontmatterOf(text: string): { newline: string, lines: string[], body: string } {
   const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text)

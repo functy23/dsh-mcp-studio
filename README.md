@@ -29,7 +29,7 @@ Tauri 桌面版（[deepseek-harness-desktop](https://github.com/dsh-tauri-desk/d
 ## ✨ 整合方式
 
 ```
-src/
+src/                          ← 活代码：从产物入口走得到的部分
 ├── panel/                    ← dsh-tauri-panel-extension（原样搬运）
 │   ├── host/                 service（mcp / skills / agents / repos / restart / rmtree）、routes（mcp / skill / import / roots / host）
 │   ├── client/               components（mcp-tab / mcp-editor-form / mcp-import-dialog / skills-tab / extension-panel / market-tab）、
@@ -39,11 +39,14 @@ src/
 │   ├── dsh-tauri/            ← dsh-tauri（host 框架工具 + client 框架桥；Tauri 专属的 invoke/iframe 桥保留但不进产物）
 │   └── dsh-tauri-ui/         ← dsh-tauri-ui（面板用到的组件与样式工具）
 └── bridge/                   构建期模块映射：旧裸包名 → 本地源码
+
+vendor-archive/               ← 走不到产物入口的 vendor 子树（Tauri 专属桥、未搬运模块的测试）
+                                不参与构建 / typecheck / 测试，只作上游对照
 ```
 
 产物只有两个文件：`lib/index.js`（host 半，ESM）与 `lib/client.js`（client 半，DSH ModuleLoader CJS）。
 
-### 通用化改造（仅三处）
+### 通用化改造（三处适配 + 行为修复）
 
 1. **模块映射**：`dsh-tauri`、`dsh-tauri/client`、`dsh-tauri-ui/client` → `src/bridge/*`，因此上游源码**不需要改 import**。
 2. **profile 探测**（`src/panel/host/service/profile.ts`）：上游只认 `--profile` 开关（Tauri 壳会传），
@@ -51,6 +54,10 @@ src/
    否则 MCP 行会写错 profile。
 3. **独立标识**：插件 id 与路由前缀从 `dsh-tauri-panel-extension` 改为 `dsh-mcp-studio`（`/dsh-mcp-studio/api/*`），
    可与 Tauri 版共存、互不覆盖。
+
+此外还有面板行为修复（依赖新版核心的导航能力变化，见 [CHANGELOG.md](CHANGELOG.md)）：
+
+4. **「新建技能」链路**：新版核心把导航能力从 `workspaces` 上移走，改为优先复用活跃会话，拿不到会话才回退上游链路。
 
 Tauri 专属部分（`dsh-tauri/client` 的 invoke / listen / iframe 消息桥、桌面侧边栏注入）**保留在 vendor 里但不被引用**，
 所以产物不会访问 `window.__TAURI__`，在 Web 与 Desktop 上同样工作。
@@ -101,9 +108,17 @@ pnpm install --dir ~/.dsh/profiles/<profile>
 
 ```sh
 pnpm install
-pnpm typecheck     # tsc --noEmit
+pnpm typecheck     # tsc --noEmit（当前全绿）
 pnpm build         # node scripts/build.mjs → lib/index.js + lib/client.js
+pnpm test          # node scripts/run-tests.mjs（vitest；见下方说明）
 ```
+
+> `pnpm test` 不是裸 `vitest run`：vite 加载的 rollup 原生绑定既没签名，DSH 自带 Node 又带
+> hardened runtime，两处都会让 `dlopen` 失败。包装脚本 `scripts/run-tests.mjs` 会先补一次 ad-hoc 签名，
+> 再挑一个不带 hardened runtime 的 Node 跑 vitest（找不到会给出下一步）。
+>
+> 旧裸包名的映射共三处，改一处要三处同改：`scripts/build.mjs`（esbuild alias）、`tsconfig.json`（paths）、
+> `vitest.config.ts`（resolve.alias）。
 
 > 构建用 **esbuild**：DSH 运行时的 Node 开启了 macOS 库验证（library validation），
 > rollup/rolldown 的 `.node` 绑定因 Team ID 不同会 `dlopen` 失败。详见 [AGENTS.md](AGENTS.md)。
