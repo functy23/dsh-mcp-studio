@@ -2,117 +2,88 @@
 
 <div align="center">
 
-**The MCP server & Skills manager for DeepSeek Harness — one plugin, web and desktop.**
+**The MCP server & Skills manager for DeepSeek Harness — the Tauri desktop edition's extension panel, consolidated into one cross-platform plugin.**
 
-<code>CRUD for MCP servers</code> <code>restart / health checks</code> <code>import scanning</code> <code>JSON backup</code> <code>Skills browser & toggles</code> <code>8 model tools</code> <code>HTTP API</code>
-
-Disabling a skill uses a **rank-0 override provider** and never touches a `SKILL.md`;
-MCP rows are written to `cordis.patch.yml`, applied by HMR, and kept across restarts.
+<code>Original panel UI, unmodified</code> <code>No Tauri runtime dependency</code> <code>Web / Desktop / Tauri</code>
 
 </div>
 
 ---
 
-## ✨ Why
+## 📦 What this is
 
-MCP management in the DSH ecosystem has been tied to one distribution: the Tauri desktop
-edition's `dsh-tauri-panel-extension` needs `dsh-tauri` + `dsh-tauri-ui` + the panel package
-installed together, and **does not work on the web or desktop profiles**.
+The Tauri desktop edition ([deepseek-harness-desktop](https://github.com/dsh-tauri-desk/deepseek-harness-desktop))
+ships its extension panel (Skills / MCP / plugin market) as **three mutually dependent packages**:
 
-`dsh-mcp-studio` folds the same capability into **one package with zero `dsh-tauri`
-dependencies**, built only on public DSH contracts:
+| Upstream package | Role | Depends on |
+| --- | --- | --- |
+| `dsh-tauri-panel-extension` | the panel itself: Skills / MCP / market tabs + host routes | `dsh-tauri`, `dsh-tauri-ui` |
+| `dsh-tauri` | host + client framework bridge (`defineRoutes`, `defineService`, `definePanel`, `defineRegister`, locale, store) | — |
+| `dsh-tauri-ui` | components used by the panel (Button/Chip/Modal/SegmentedControl/PanelPage/icons…) | `dsh-tauri` |
 
-- the host half uses a `webServer` exact route, `ctx.tools.register` and `ctx.skills`;
-- the client half registers **Settings → MCP 管理** and **Settings → Skills 管理** via
-  `slots.inject('settings.section', …)`;
-- nothing outside the active profile is touched, and no distribution-private module is imported.
+Installing MCP management meant installing all three, and it only worked inside the Tauri build.
 
-The result: `web`, `desktop` and `tauri` profiles all install the same build with one command.
+**dsh-mcp-studio consolidates them into a single package**: the upstream sources are vendored as-is
+(`src/panel`, `src/vendor/dsh-tauri`, `src/vendor/dsh-tauri-ui`), a build-time alias layer (`src/bridge`)
+maps the old bare specifiers onto those local files, and only the minimum changes needed for
+cross-platform support are applied. **No UI was rewritten.**
+
+## ✨ How the integration works
+
+```
+src/panel/            the extension panel, verbatim (host services + routes, client components/register/locales/styles)
+src/vendor/dsh-tauri/ the framework bridge it imports, verbatim (Tauri-only invoke/iframe modules stay unused)
+src/vendor/dsh-tauri-ui/ the components it imports, verbatim
+src/bridge/           build-time module mapping: old bare specifier → local file
+```
+
+Two artifacts: `lib/index.js` (host half, ESM) and `lib/client.js` (client half, DSH ModuleLoader CJS).
+
+### Cross-platform changes (three, all minimal)
+
+1. **Module mapping** — `dsh-tauri`, `dsh-tauri/client`, `dsh-tauri-ui/client` resolve to `src/bridge/*`, so upstream imports are untouched.
+2. **Profile detection** — upstream only honoured `--profile`; `DSH_PROFILE`, `DSH_PROFILE_DIR` and the
+   `<DSH_HOME>/profiles/<name>` launcher argument are now detected too, so MCP rows land in the right profile.
+3. **Own identity** — plugin id and route prefix are `dsh-mcp-studio` (`/dsh-mcp-studio/api/*`), so it coexists with the Tauri plugin.
+
+Tauri-only code (invoke / listen / iframe bridges) stays vendored but unreferenced: the bundle never touches `window.__TAURI__`.
 
 ## 🚀 Install
 
-**Requirement**: a working DSH (web edition, desktop edition, or Tauri edition).
-
 ```sh
-dsh plugin --profile desktop add dsh-mcp-studio@latest   # DSH Desktop
-dsh plugin --profile web     add dsh-mcp-studio@latest   # DSH Web
-dsh plugin --profile tauri   add dsh-mcp-studio@latest   # Tauri desktop
+dsh plugin --profile desktop add dsh-mcp-studio@latest
+dsh plugin --profile web     add dsh-mcp-studio@latest
+dsh plugin --profile tauri   add dsh-mcp-studio@latest
 ```
 
-The package declares `dsh.bundle.patch`, so installation mounts it automatically — no manual
-config edits. Hard-refresh the browser afterwards (Cmd/Ctrl+Shift+R); restart DSH once if the
-host half changed.
+Restart DSH once after a host-half update, then hard-refresh the browser.
 
-**Local development (link install)**
+## 🧭 UI
 
-```sh
-pnpm install && pnpm build
-# ~/.dsh/profiles/<profile>/package.json
-#   "dependencies": { "dsh-mcp-studio": "link:/path/to/dsh-mcp-studio" }
-#   "dsh": { "profile": { "bundles": [ ..., "dsh-mcp-studio" ] } }
-pnpm install --dir ~/.dsh/profiles/desktop
-```
-
-## 🧭 Screens
-
-### Settings → MCP 管理
-
-Server list (id, name, transport, scope, enabled state, live loader state, shadowing), add /
-edit for both `streamable-http` and `stdio` shapes, enable / disable, restart (disable →
-unload → re-enable), health checks (PATH probe for stdio, timed HTTP probe otherwise),
-copy as DSH YAML / plain JSON / standard `mcpServers` JSON, import scanning, and JSON
-export/import with id-based de-duplication.
-
-### Settings → Skills 管理
-
-Skills grouped by level (project / runtime / custom / user / bundled / plugin) and then by
-provider, with search, one-click enable/disable through the override provider, a detail view
-that shows the raw `SKILL.md`, and a persisted state file at
-`<profile>/dsh-mcp-studio.json`. User-level skills are listed read-only with the reason shown.
-
-## 🤖 Model tools
-
-`mcp_studio_list`, `mcp_studio_add`, `mcp_studio_set_enabled`, `mcp_studio_restart`,
-`mcp_studio_remove`, `mcp_studio_check`, `skill_studio_list`, `skill_studio_set_enabled`.
-
-## 🌐 HTTP API
-
-```sh
-curl -s http://127.0.0.1:3080/dsh-mcp-studio/api \
-  -H 'content-type: application/json' \
-  -H 'x-dsh-plugin: dsh-mcp-studio' \
-  -d '{"op":"mcp-list","args":{}}'
-```
-
-POST-only; the `x-dsh-plugin` header is required (a cross-site page cannot set a custom header
-without a CORS preflight, which this route never answers); `Origin` is checked when present;
-bodies are capped at 1 MiB; an unparseable patch file is reported, never rewritten.
-
-Ops: `ping`, `paths`, `mcp-list`, `mcp-save`, `mcp-remove`, `mcp-toggle`, `mcp-restart`,
-`mcp-check`, `mcp-copy`, `mcp-export`, `mcp-import`, `mcp-import-scan`, `mcp-import-apply`,
-`skill-list`, `skill-detail`, `skill-toggle`, `skill-refresh`.
+The sidebar shows **扩展** (Puzzle icon) with the original three-tab panel:
+**MCP** (list, add/edit, enable/disable, restart, connection check, copy, import scanning, JSON export/import),
+**Skills** (grouped list, search, enable/disable, view/edit SKILL.md, create, delete, open folder, refresh),
+**plugin market** (embedded when the market service is present).
 
 ## 🛠 Development
 
 ```sh
 pnpm install
-pnpm typecheck     # tsc --noEmit
-pnpm build         # node scripts/build.mjs (esbuild)
-pnpm test          # node scripts/test.mjs (node:test, 53 tests)
-pnpm check         # everything
+pnpm typecheck
+pnpm build         # node scripts/build.mjs → lib/index.js + lib/client.js
 ```
 
-esbuild and `node:test` are used deliberately: the DSH runtime's Node enforces macOS library
-validation, so rollup/rolldown/vitest `.node` bindings fail to load. See `AGENTS.md`.
+> esbuild is used deliberately: the DSH runtime's Node enforces macOS library validation, and
+> rollup/rolldown `.node` bindings fail to dlopen (see [AGENTS.md](AGENTS.md)).
 
 ## 🙏 Credits
 
-- **[deepseek-harness-desktop](https://github.com/dsh-tauri-desk/deepseek-harness-desktop)**
-  (Tauri desktop edition) — the functional baseline for this project:
-  `packages/dsh-tauri-panel-extension` defined the MCP / Skills panel experience and the key
-  design decisions (patch-row writes, profile detection, health checks, import scanning).
+- **[deepseek-harness-desktop](https://github.com/dsh-tauri-desk/deepseek-harness-desktop)** by Hairyf and contributors —
+  the panel, the framework bridge and the UI components in this repository are their original work,
+  vendored here. Please support the upstream project and its Tauri desktop edition.
 - Official plugin docs: <https://deepseek-harness.github.io/deepseek-harness/develop/basic/>
 
 ## 📄 License
 
-[MIT](LICENSE)
+MIT, with the upstream additional terms ([THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)):
+no commercial secondary development.

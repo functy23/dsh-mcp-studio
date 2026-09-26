@@ -5,26 +5,36 @@
     "moduleResolution": "bundler",
     "lib": [
       "ES2023",
-      "DOM"
+      "DOM",
+      "DOM.Iterable"
     ],
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
+    "strict": false,
+    "noImplicitAny": false,
     "skipLibCheck": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "types": [
       "node"
     ],
-    "jsx": "react",
-    "jsxFactory": "React.createElement",
-    "jsxFragmentFactory": "React.Fragment"
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "dsh-tauri": [
+        "./src/bridge/tauri-host.ts"
+      ],
+      "dsh-tauri/client": [
+        "./src/bridge/tauri-client.ts"
+      ],
+      "dsh-tauri-ui/client": [
+        "./src/bridge/tauri-ui.ts"
+      ]
+    }
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.tsx",
-    "tests/**/*.ts",
-    "tsdown.config.ts"
+    "src/**/*.tsx"
   ]
 }

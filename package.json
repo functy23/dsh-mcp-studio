@@ -1,32 +1,30 @@
 {
   "name": "dsh-mcp-studio",
-  "version": "0.1.0",
-  "description": "MCP Studio for DeepSeek Harness — cross-platform (Web / Desktop) MCP server & Skills manager in a single plugin: settings pages + HTTP API + model tools, zero Tauri dependency.",
+  "version": "1.0.0",
+  "description": "DeepSeek Harness 的 MCP 服务与 Skills 管理器：把 Tauri 桌面版的扩展面板（MCP / Skills / 插件市场）连同其依赖整合成一个插件，Web / Desktop / Tauri 通用。",
   "type": "module",
   "main": "lib/index.js",
-  "types": "lib/types/index.d.ts",
+  "types": "lib/index.d.ts",
   "exports": {
     ".": {
-      "types": "./lib/types/index.d.ts",
+      "types": "./lib/index.d.ts",
       "default": "./lib/index.js"
     },
     "./client": {
-      "types": "./lib/types/client/index.d.ts",
+      "types": "./lib/client.d.ts",
       "default": "./lib/client.js"
     },
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
   "files": [
-    "lib/index.js",
-    "lib/index.js.map",
-    "lib/client.js",
-    "lib/client.js.map",
+    "lib",
     "cordis.patch.yml",
     "README.md",
     "README_EN.md",
     "AGENTS.md",
     "CHANGELOG.md",
+    "THIRD_PARTY_NOTICES.md",
     "LICENSE"
   ],
   "sideEffects": [
@@ -39,18 +37,45 @@
     "client": {
       "platform": "web",
       "inject": [
-        "@deepseek-ai/dsh-client-connection",
-        "@deepseek-ai/dsh-client-ui-settings"
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-primitives",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-locale"
       ]
     }
   },
   "engines": {
     "node": ">=20"
   },
+  "dependencies": {
+    "@css-render/plugin-bem": "^0.15.14",
+    "@gravity-ui/icons": "^2.13.1",
+    "@reause/core": "latest",
+    "css-render": "^0.15.14",
+    "date-fns": "^4.1.0",
+    "dompurify": "^3.2.7",
+    "h3": "2.0.1-rc.31",
+    "hookable": "^5.5.3",
+    "lodash-es": "^4.17.21",
+    "marked": "^16.4.0",
+    "ofetch": "^1.5.1",
+    "pathe": "^2.0.3",
+    "smol-toml": "^1.4.2",
+    "unstorage": "^1.17.1",
+    "valtio-define": "^0.3.0",
+    "yaml": "^2.8.1"
+  },
   "peerDependencies": {
     "@deepseek-ai/cordis": ">=4.0.1 <5",
-    "@deepseek-ai/dsh-tools": ">=0.1.0-rc.1 <0.2.0",
     "react": "^18.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^22.20.0",
@@ -58,13 +83,13 @@
     "esbuild": "^0.28.2",
     "react": "^18.3.1",
     "typescript": "^5.9.3",
-    "yaml": "^2.8.1"
+    "vitest": "^3.2.4"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "node scripts/build.mjs",
-    "test": "node scripts/test.mjs",
-    "check": "tsc -p tsconfig.json --noEmit && node scripts/build.mjs && node scripts/test.mjs",
+    "test": "vitest run",
+    "check": "node scripts/build.mjs",
     "prepack": "node scripts/build.mjs"
   },
   "keywords": [
@@ -77,17 +102,6 @@
     "cordis"
   ],
   "license": "MIT",
-  "peerDependenciesMeta": {
-    "@deepseek-ai/cordis": {
-      "optional": true
-    },
-    "@deepseek-ai/dsh-tools": {
-      "optional": true
-    },
-    "react": {
-      "optional": true
-    }
-  },
   "author": {
     "name": "functy23",
     "url": "https://github.com/functy23"

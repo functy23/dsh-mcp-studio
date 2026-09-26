@@ -1,101 +1,71 @@
 # AGENTS.md — dsh-mcp-studio
 
-Working notes for agents (and humans) editing this repository.
+面向在本仓库工作的 agent / 开发者。
 
-## What this project is
+## 这个仓库是什么
 
-A single DSH plugin that manages **MCP servers** and **Skills** for any DeepSeek Harness
-profile (web / desktop / tauri). It replaces the multi-package, Tauri-only
-`dsh-tauri-panel-extension` arrangement with one package that depends on nothing but the
-public DSH plugin contract.
+把 Tauri 桌面版的扩展面板整合成一个跨端插件：
 
-## Hard constraints
+- `src/panel` ← `dsh-tauri-panel-extension`（面板本体：Skills / MCP / 插件市场 + host 服务与路由）
+- `src/vendor/dsh-tauri` ← `dsh-tauri`（host 框架工具 + client 框架桥）
+- `src/vendor/dsh-tauri-ui` ← `dsh-tauri-ui`（面板用到的组件与样式工具）
+- `src/bridge` ← 构建期模块映射（旧裸包名 → 本地文件）
 
-1. **No distribution-private dependencies.** Never import `dsh-tauri`, `dsh-tauri-ui`,
-   `dsh-tauri-session` or any other Tauri-side package. Everything must work through
-   `webServer`, `tools`, `skills`, `settings` and the client `slots` registry.
-2. **No new native modules.** The DSH runtime's Node enforces macOS library validation, so
-   any `.node` binding signed by another Team ID fails to `dlopen`. That is why this repo
-   builds with esbuild (standalone binary) and tests with `node:test` (pure JS) instead of
-   rollup/rolldown-based tooling. Do not add vitest, rollup, rolldown, swc or similar.
-3. **Never damage a user's patch file.** `src/host/patch.ts` may only add, edit, remove or
-   toggle entries whose `name` is `@deepseek-ai/dsh-mcp-client`. A file that fails to parse
-   must produce an error, never a rewrite. The CRUD self-test in the README flow
-   (add → list → check → toggle → remove) must leave the file byte-identical to the backup.
-4. **No user-file edits for skills.** Skill enable/disable goes through a rank-0 override
-   provider persisted in `<profile>/dsh-mcp-studio.json`. Never write into a user's
-   `SKILL.md` or `~/.dsh/skills`.
-5. **The API route stays gated.** POST-only, `x-dsh-plugin: dsh-mcp-studio` header required,
-   same-origin `Origin` check, 1 MiB body cap. Do not relax these.
+**上游源码保持原样**：需要改行为时，优先在 bridge 或入口层适配，而不是改 vendor/panel 的语义。
 
-## Layout
+## 硬性约束
 
-```
-src/shared/constants.ts   ids, API path, page slot metadata, wire types
-src/host/index.ts         plugin object { name, inject, apply } — the only entry point
-src/host/paths.ts         DSH home / profile detection (pure, unit-tested)
-src/host/patch.ts         YAML row-level read/write for cordis.patch.yml (pure, unit-tested)
-src/host/mcp.ts           server CRUD, restart, export/import, copy snippets
-src/host/mcp-check.ts     PATH and HTTP health probes
-src/host/mcp-import.ts    scanning Claude/Cursor/Windsurf/VS Code/other-profile configs
-src/host/skills.ts        skill list/detail/toggle via the override provider
-src/host/tools.ts         8 model-facing tools
-src/host/api.ts           HTTP API: gate, body cap, op dispatch
-src/client/index.ts       client plugin: registers the two settings pages
-src/client/pages/*.tsx    MCP page and Skills page (React, classic runtime)
-scripts/build.mjs         esbuild build → lib/index.js + lib/client.js
-scripts/test.mjs          esbuild pre-bundle + node:test
-```
+1. **不要重写 UI**。面板组件、样式、交互都来自上游；改动限于 import 解析、profile 探测、插件 id / 路由前缀。
+2. **不要引入 Tauri 运行时依赖**。`window.__TAURI__`、`@tauri-apps/*`、iframe 父窗口消息桥都不得出现在产物里；
+   Tauri 专属模块留在 vendor 但不被入口引用。可用 `grep -c '__TAURI__' lib/*.js` 自检（应为 0）。
+3. **构建不要引入需要原生绑定的打包器**。DSH 运行时的 Node 开启 macOS 库验证，
+   rollup / rolldown 的 `.node` 绑定会 `dlopen` 失败（实测），所以构建固定用 esbuild（独立二进制）。
+   测试沿用上游的 vitest（`src/**/*.test.ts`，50 个文件）：在 DSH 自带 Node 下同样受库验证限制，
+   需要系统 Node ≥ 20 才能跑通 —— `pnpm test` 跑不起来时用系统 Node 重试，别改测试框架。
+4. **官方包一律 external**。`@deepseek-ai/*`、`react`、`react/jsx-runtime` 由宿主提供；
+   打进产物会导致 React 双实例与 hooks 失效。见 `scripts/build.mjs` 的 `officialExternal` 插件。
+5. **直接改用户的 `cordis.patch.yml` 必须可回滚**：写入前备份，写入后回读校验，CRUD 自检要能保证文件与备份逐字节一致。
+6. **技能启停沿用上游策略**（SKILL.md 的 `user-invocable` 策略位），不要新增旁路状态文件。
 
-## Commands
+## 命令
 
 ```sh
 pnpm install
-pnpm typecheck     # tsc --noEmit
+pnpm typecheck     # tsc --noEmit（上游代码宽松，故 strict: false）
 pnpm build         # node scripts/build.mjs
-pnpm test          # node scripts/test.mjs
-pnpm check         # all three
+pnpm test          # vitest run（需系统 Node，见约束 3）
 ```
 
-The bundled DSH runtime Node may not be on `PATH`; prepend it when running pnpm by hand:
+DSH 自带的 Node 可能不在 PATH，手工跑 pnpm 时先加：
 
 ```sh
 export PATH="$HOME/.dsh/dsh-runtimes/dsh-primary-runtime/dependencies/node/bin:$PATH"
 ```
 
-## Installing into a profile (development loop)
+## 本地安装与验证
 
 ```sh
 # ~/.dsh/profiles/<profile>/package.json
-#   dependencies: { "dsh-mcp-studio": "link:/abs/path/to/dsh-mcp-studio" }
+#   dependencies: { "dsh-mcp-studio": "link:/abs/path" }
 #   dsh.profile.bundles: [ ..., "dsh-mcp-studio" ]
 pnpm install --dir ~/.dsh/profiles/<profile>
 ```
 
-The DSH loader hot-applies the new bundle, so the host half is reachable without a restart:
+- host 半：`dsh.profile.bundles` 变更后 loader 会热挂载；**修改 lib/index.js 内容需要重启 DSH**。
+- client 半：浏览器硬刷新（Cmd/Ctrl+Shift+R）。
+- 路由自检：
 
 ```sh
-curl -s http://127.0.0.1:<port>/dsh-mcp-studio/api \
-  -H 'content-type: application/json' -H 'x-dsh-plugin: dsh-mcp-studio' \
-  -d '{"op":"ping","args":{}}'
+curl -s http://127.0.0.1:<port>/dsh-mcp-studio/api/mcp
+curl -s http://127.0.0.1:<port>/dsh-mcp-studio/api/skills
 ```
 
-The client half needs a browser hard refresh; a new settings page appears under
-**设置 → MCP 管理 / Skills 管理**.
+host 半可以在没有 DSH 的情况下冒烟测试：`node` 导入 `lib/index.js`，用带 `webServer` / `skills` / `connection` / `logger` 的
+mock ctx 调 `apply(ctx, { profile: 'desktop' })`，应注册 13 条路由且不抛错。
 
-## Conventions
+## 约定
 
-- Host code is strict TypeScript, no `any` leaks beyond DSH service handles (which are
-  typed `any` on purpose — their runtime shape is not a public contract).
-- Pure logic lives in small functions so it can be unit-tested without a running DSH.
-- Every write path is validated first and reported back as `{ ok, error }`; the UI never
-  assumes success.
-- Client code is React `createElement` output (classic runtime) so the bundle only needs
-  `require('react')` inside the DSH ModuleLoader factory.
-- Comments explain *why* (constraints, ordering, caveats), not *what*.
-
-## Licensing
-
-MIT. `README.md` credits the Tauri desktop edition
-(<https://github.com/dsh-tauri-desk/deepseek-harness-desktop>) as the functional baseline —
-keep that credit when editing docs or shipping a release.
+- 产物只有 `lib/index.js`（ESM host）与 `lib/client.js`（ModuleLoader CJS client + id `dsh-mcp-studio`）。
+- `package.json` 的 `dsh.client.inject` 必须列出用到的官方客户端模块（layout / primitives / renderer / locale）。
+- 中文注释解释“为什么”（约束、顺序、坑），不解释“是什么”。
+- 任何行为变更都要同步 `README.md`、`README_EN.md`、`CHANGELOG.md`，并保留上游鸣谢与许可说明。
