@@ -29,8 +29,9 @@
 
 - SKILL.md frontmatter 的写入与就地重写共用一套构造（原来两处各拼一遍、已开始分叉），并补 13 条契约测试。
 - 新增 `scripts/run-tests.mjs`：给 rollup 原生绑定补 ad-hoc 签名 + 挑一个不带 hardened runtime 的 Node 跑 vitest。
-- 新增 GitHub Actions CI（`typecheck` / `test` / `build` + 产物不得含 `__TAURI__` 的自检），README 头部换成
-  徽章版式并加项目图标（`assets/icon.png`）。
+- README 头部换成徽章版式并加项目图标（`assets/icon.svg` 为矢量源，`assets/icon.png` 供渲染）。
+  本仓库**不加 CI**：typecheck 依赖宿主提供的 `@deepseek-ai/*`、测试依赖非 hardened 的 Node，
+  干净 runner 上跑不出有意义结论，门禁一律放在本地。
 
 ## [1.0.0] — 2026-09-26
 

@@ -11,7 +11,6 @@
 [![Top Language](https://img.shields.io/github/languages/top/functy23/dsh-mcp-studio?style=flat)](https://github.com/functy23/dsh-mcp-studio)
 [![Platform](https://img.shields.io/badge/platform-Web%20%7C%20Desktop-lightgrey.svg)](https://github.com/functy23/dsh-mcp-studio)
 
-[![CI](https://img.shields.io/github/actions/workflow/status/functy23/dsh-mcp-studio/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white)](https://github.com/functy23/dsh-mcp-studio/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?logo=opensourceinitiative&logoColor=white)](https://opensource.org/licenses/MIT)
 
 [![Stars](https://img.shields.io/github/stars/functy23/dsh-mcp-studio?style=flat&logo=github)](https://github.com/functy23/dsh-mcp-studio/stargazers)
@@ -133,9 +132,8 @@ pnpm build         # node scripts/build.mjs → lib/index.js + lib/client.js
 pnpm test          # node scripts/run-tests.mjs（vitest；见下方说明）
 ```
 
-> GitHub Actions 上跑的是 `pnpm typecheck:ci`：CI 机器没有 DSH 宿主，`@deepseek-ai/*` 解析不到，
-> `tsconfig.ci.json` 用 `types/host-modules.d.ts` 把它们声明成 any，从而只检查**本仓库自己的代码**。
-> 宿主 API 的真实签名漂移由本地 `pnpm typecheck`（`tsconfig.json`）负责——两者是互补关系。
+> 本仓库**没有 CI**：验证依赖 DSH 宿主与 macOS 签名，跑在干净 runner 上只能验一半，
+> 所以 `typecheck` / `test` / `build` 一律以本地为准。
 
 > `pnpm test` 不是裸 `vitest run`：vite 加载的 rollup 原生绑定既没签名，DSH 自带 Node 又带
 > hardened runtime，两处都会让 `dlopen` 失败。包装脚本 `scripts/run-tests.mjs` 会先补一次 ad-hoc 签名，

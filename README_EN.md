@@ -11,7 +11,6 @@
 [![Top Language](https://img.shields.io/github/languages/top/functy23/dsh-mcp-studio?style=flat)](https://github.com/functy23/dsh-mcp-studio)
 [![Platform](https://img.shields.io/badge/platform-Web-lightgrey.svg)](https://github.com/functy23/dsh-mcp-studio)
 
-[![CI](https://img.shields.io/github/actions/workflow/status/functy23/dsh-mcp-studio/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white)](https://github.com/functy23/dsh-mcp-studio/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?logo=opensourceinitiative&logoColor=white)](https://opensource.org/licenses/MIT)
 
 [![Stars](https://img.shields.io/github/stars/functy23/dsh-mcp-studio?style=flat&logo=github)](https://github.com/functy23/dsh-mcp-studio/stargazers)

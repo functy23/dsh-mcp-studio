@@ -41,14 +41,13 @@ hookable v5 的 `callHook` 变成异步（钩子要等一个微任务），而�
 ```sh
 pnpm install
 pnpm typecheck     # tsc --noEmit（上游代码宽松，故 strict: false）；当前全绿，别再让它变红
-pnpm typecheck:ci  # CI 用：types/host-modules.d.ts 把 @deepseek-ai/* 当 any，只查本仓库自己的代码
 pnpm build         # node scripts/build.mjs
 pnpm test          # node scripts/run-tests.mjs（签绑定 + 挑非 hardened Node，见约束 3）
 ```
 
-两个 tsconfig 的分工：`tsconfig.json` 在装了 DSH 的机器上解析宿主真实类型（宿主升级导致报错是信号）；
-`tsconfig.ci.json` 继承它、额外 include `types/host-modules.d.ts`，让干净检出（CI）也能验证我们自己的代码。
-改活代码类型时两个都要跑——CI 抓不到宿主 API 漂移，本地才抓得到。
+**这个仓库没有 CI，是有意的**：`typecheck` 需要宿主提供的 `@deepseek-ai/*`（约束 4 让它们保持 external），
+`test` 需要非 hardened 的 Node，两者在干净 runner 上都跑不出有意义的结论——把门禁放本地，
+别加 workflow（加过一版，红了两次，已删）。
 
 三个「别名同源」的地方改一处就要改全：`scripts/build.mjs` 的 esbuild alias、`tsconfig.json` 的 `paths`、
 `vitest.config.ts` 的 `resolve.alias`（顺序敏感：具体键要排在 `dsh-tauri` 前面）。
