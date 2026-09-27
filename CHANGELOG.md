@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.3] — 2026-09-27
+
+### Fixed
+
+- **新建技能报 `cannot get property "layout" without inject`**：客户端半漏声明 `layout` 服务。
+  `definePanel` 的 `select()` / `close()` 会调 `ctx.layout.selectPanel()`，没进 `inject` 时 cordis 的反射代理直接抛错——
+  技能其实已建好、草稿也填了，但以报错收场。`inject` 补为
+  `['slots', 'locale', 'layout', 'sessions', 'workspaces']`。
+
 ## [1.0.2] — 2026-09-26
 
 ### Added

@@ -13,7 +13,10 @@ import { stylesFeature } from './register/styles'
 
 export const name = PLUGIN_ID
 
-export const inject = ['slots', 'locale', 'sessions', 'workspaces']
+// `layout` 必须在这里声明：definePanel 的 select/close 走 ctx.layout.selectPanel()，
+// 少了它 cordis 的反射代理会抛 `cannot get property "layout" without inject`
+// ——「新建技能」链路里 panel.close() 正好踩到（技能会建出来、草稿也填好，但报错收场）。
+export const inject = ['slots', 'locale', 'layout', 'sessions', 'workspaces']
 
 export function apply(ctx: ClientContext): void {
   ctx.effect(locale.registerLocale, LOCALE_EFFECT)
