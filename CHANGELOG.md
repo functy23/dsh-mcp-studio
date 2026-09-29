@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.4] — 2026-09-29
+
+### Fixed
+
+- **文档更正：桌面版是可用的**。1.0.1 起 README 写「桌面版（`--profile desktop`）不可用，请勿安装」，
+  依据是包清单里的 `dsh.client.platform: web` —— 那是把**客户端类型**（Web GUI）误读成了 profile 限制。
+  实测：Web 与 Desktop 两个 profile 跑的客户端都是 `@deepseek-ai/dsh-web-app`，本插件在 desktop profile 上
+  正常工作（面板、图标、技能创建均验证可用）。README 安装段改为 web / desktop 都给出命令，
+  Platform 徽章回到 `Web | Desktop`。Tauri 版仍不在范围内（自带原生扩展面板插件）。
+
 ## [1.0.3] — 2026-09-27
 
 ### Fixed
@@ -67,8 +77,10 @@
   （`dsh-tauri` / `dsh-tauri/client` / `dsh-tauri-ui/client`），因此上游源码无需改动 import。
 - **跨端支持**：插件不再依赖 Tauri 运行时；profile 探测补齐 `DSH_PROFILE` / `DSH_PROFILE_DIR` / 启动参数，
   Web 与 Desktop profile 都能正确读写自己的 `cordis.patch.yml`。
-  > 更正（1.0.1）：host 半确实是通用的，但**客户端半只声明了 `dsh.client.platform: web`**，
-  > 桌面版（Electra 客户端）不会出现「扩展」入口。安装以 README 为准，只装 Web profile。
+  > 更正（1.0.4）：1.0.1 这里曾写过「桌面版不可用」，那是把 `dsh.client.platform: web` 误读成了 profile 限制。
+  > 实际 `web` 指**客户端类型**（Web GUI），Web 与 Desktop 两个 profile 跑的都是 `@deepseek-ai/dsh-web-app`，
+  > 客户端半在 desktop profile 上正常工作（已实测：图标、面板、技能创建均可用）。
+  > Tauri 版仍不在范围内——它有自己原生的扩展面板插件。
 - **独立标识**：插件 id 与路由前缀改为 `dsh-mcp-studio`（`/dsh-mcp-studio/api/*`），可与 Tauri 版插件共存。
 
 

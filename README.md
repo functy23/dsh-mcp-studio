@@ -9,7 +9,7 @@
 [![dsh-mcp-studio](https://img.shields.io/badge/dsh--mcp--studio-DSH%20plugin-4d6bfe.svg)](https://github.com/functy23/dsh-mcp-studio)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Top Language](https://img.shields.io/github/languages/top/functy23/dsh-mcp-studio?style=flat)](https://github.com/functy23/dsh-mcp-studio)
-[![Platform](https://img.shields.io/badge/platform-DSH%20Web-lightgrey.svg)](https://github.com/functy23/dsh-mcp-studio)
+[![Platform](https://img.shields.io/badge/platform-Web%20%7C%20Desktop-lightgrey.svg)](https://github.com/functy23/dsh-mcp-studio)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?logo=opensourceinitiative&logoColor=white)](https://opensource.org/licenses/MIT)
 
@@ -77,19 +77,21 @@ Tauri 专属部分（`dsh-tauri/client` 的 invoke / listen / iframe 消息桥�
 
 ## 🚀 安装
 
-**当前只支持 DSH Web 版** —— 插件声明的是 `dsh.client.platform: web`（面板的客户端半注册在 Web 客户端上）：
+装到你想用的那个 profile 上：
 
 ```sh
-dsh plugin --profile web add dsh-mcp-studio@latest
+dsh plugin --profile web     add dsh-mcp-studio@latest   # DSH Web 版
+dsh plugin --profile desktop add dsh-mcp-studio@latest   # DSH 桌面版
 ```
 
 包内声明了 `dsh.bundle.patch`，安装即自动挂载；host 半更新后重启一次 DSH，然后硬刷新浏览器（Cmd/Ctrl+Shift+R）。
 
-> **桌面版（`--profile desktop`）目前不可用，请勿安装。** 桌面版 profile 用的是 Electra 客户端
-> （客户端能力由 `@deepseek-ai/dsh-client-runtime` 提供），而本插件的客户端半依赖 Web 客户端的
-> 官方模块（ui-layout / ui-primitives / ui-renderer / locale）。两者不通用，装上后侧边栏不会出现「扩展」。
-> Tauri 版同理（本插件只是把 Tauri 版的三个包搬过来整合，产物里没有任何 Tauri 运行时依赖，
-> 但也不反过来替换 Tauri 版的原生插件）。
+> **关于 `dsh.client.platform: web`**：这里的 `web` 指**客户端类型**（Web GUI），不是 profile 名字。
+> Web 与 Desktop 两个 profile 跑的都是 `@deepseek-ai/dsh-web-app`，同一个客户端，所以两端都能用；
+> 本插件的客户端半依赖它的官方模块（ui-layout / ui-primitives / ui-renderer / locale）。
+>
+> **Tauri 版不在范围内**：Tauri 发行版有自己的原生扩展面板插件。本仓库只是把那三个包搬过来整合成
+> 跨端插件，产物里没有任何 Tauri 运行时依赖，也不反过来替换 Tauri 版的原生插件。
 
 本地开发（link）：
 
