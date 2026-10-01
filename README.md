@@ -116,6 +116,12 @@ pnpm install --dir ~/.dsh/profiles/<profile>
 
 技能启停沿用上游策略：写 SKILL.md 的 `user-invocable` 策略位，不新增旁路状态。
 
+<p align="center">
+  <img src="assets/screenshot-market.png" alt="扩展面板 · 市场" width="720" /><br/>
+  <img src="assets/screenshot-skills.png" alt="扩展面板 · 技能" width="720" /><br/>
+  <img src="assets/screenshot-mcp.png" alt="扩展面板 · MCP" width="720" />
+</p>
+
 ## 🌐 HTTP API
 
 面板的客户端半与脚本共用同源路由（沿用上游的安全闸门：变更方法要求本机回环来源、`Origin` 与 `Host` 不符直接 403）：

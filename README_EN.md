@@ -96,6 +96,12 @@ The sidebar shows **扩展** (Puzzle icon) with the original three-tab panel:
 **Skills** (grouped list, search, enable/disable, view/edit SKILL.md, create, delete, open folder, refresh),
 **plugin market** (embeds [`dshmarket`](https://github.com/dsh-market/dsh-market) when it publishes `render`, and hides the duplicate settings-page entry; no tab if the market is missing or too old).
 
+<p align="center">
+  <img src="assets/screenshot-market.png" alt="Extension panel · Market" width="720" /><br/>
+  <img src="assets/screenshot-skills.png" alt="Extension panel · Skills" width="720" /><br/>
+  <img src="assets/screenshot-mcp.png" alt="Extension panel · MCP" width="720" />
+</p>
+
 ## 🛠 Development
 
 ```sh
