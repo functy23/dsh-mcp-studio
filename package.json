@@ -1,7 +1,7 @@
 {
   "name": "dsh-mcp-studio",
-  "version": "1.0.4",
-  "description": "DeepSeek Harness 的 MCP 服务与 Skills 管理器：面板里增删改 MCP 行、扫描导入其他 Agent 配置、管理 Skills。Web 与 Desktop profile 通用。",
+  "version": "1.0.5",
+  "description": "DeepSeek Harness 的 MCP 服务与 Skills 管理器：面板里增删改 MCP 行、扫描导入其他 Agent 配置、管理 Skills；装了 dshmarket 时内嵌插件市场。Web 与 Desktop profile 通用。",
   "icon": "./assets/icon.svg",
   "type": "module",
   "main": "lib/index.js",

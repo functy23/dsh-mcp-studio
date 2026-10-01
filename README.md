@@ -71,6 +71,7 @@ vendor-archive/               ← 走不到产物入口的 vendor 子树（Tauri
 此外还有面板行为修复（依赖新版核心的导航能力变化，见 [CHANGELOG.md](CHANGELOG.md)）：
 
 4. **「新建技能」链路**：新版核心把导航能力从 `workspaces` 上移走，改为优先复用活跃会话，拿不到会话才回退上游链路。
+5. **插件市场 tab（Issue #1）**：上游用 iframe（`window.parent !== window`）才收编 `dshmarket`，那是给 Tauri 壳用的。本插件就是扩展面板宿主，Web / Desktop 上只要 `dshmarket` 发布了 `render` 就嵌进「市场」tab，并撤下设置页重复入口。
 
 Tauri 专属部分（`dsh-tauri/client` 的 invoke / listen / iframe 消息桥、桌面侧边栏注入）**保留在 vendor 里但不被引用**，
 所以产物不会访问 `window.__TAURI__`，在 Web 与 Desktop 上同样工作。
@@ -111,7 +112,7 @@ pnpm install --dir ~/.dsh/profiles/<profile>
 | --- | --- |
 | **MCP** | 服务器列表（项目级 / 全局、启用状态、传输方式、URL / 命令）、新增与编辑表单、启用 / 停用、重启、连接检查、复制片段、从其他 DSH profile 或 Claude / Cursor / Windsurf / VS Code 配置**导入扫描**、JSON 导出导入 |
 | **Skills** | 技能列表（按来源分组）、搜索、启用 / 停用、查看与编辑 SKILL.md、新建技能、删除、打开目录、刷新 |
-| **插件市场** | 面板内嵌市场入口（检测到市场服务时才接管，否则保留其原设置页入口） |
+| **插件市场** | 已安装 [`dshmarket`](https://github.com/dsh-market/dsh-market) 且其客户端提供 `render` 时，把市场面板嵌进本 tab，并藏掉设置页里的重复入口；未安装或旧版没有 `render` 时不出现该 tab，设置页入口保留 |
 
 技能启停沿用上游策略：写 SKILL.md 的 `user-invocable` 策略位，不新增旁路状态。
 

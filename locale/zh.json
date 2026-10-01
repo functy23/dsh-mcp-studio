@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "MCP 与 Skills 管理器",
-    "description": "在 DSH 侧边栏面板里管理 MCP 服务器与技能。"
+    "description": "在 DSH 侧边栏面板里管理 MCP 服务器与技能；装了 dshmarket 时内嵌插件市场。"
   }
 }

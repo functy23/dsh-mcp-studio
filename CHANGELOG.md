@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.5] — 2026-10-01
+
+### Fixed
+
+- **插件市场 tab 在 Web / Desktop 上也出现**（[issue #1](https://github.com/functy23/dsh-mcp-studio/issues/1)）。
+  上游 `hostsMarketPanel` 用 `window.parent !== window` 只收编 Tauri iframe，同一份代码搬过来后，
+  浏览器 / DSH Desktop 里 `parent === window`，市场 tab 永远不出现，设置页入口也不会被撤下。
+  本插件就是扩展面板宿主，判据改为只看 `dshmarket.render`：有就嵌进「市场」tab 并藏掉设置页重复入口；
+  没装 `dshmarket` 或旧版（1.47.0，有 `market` 没有 `render`）不出现 tab，也不动设置页入口。
+
 ## [1.0.4] — 2026-09-29
 
 ### Fixed

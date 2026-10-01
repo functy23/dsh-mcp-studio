@@ -4,21 +4,19 @@ import { definePanel, defineRegister } from 'dsh-tauri/client'
 import { ExtensionPanel } from '../components/extension-panel'
 import { MARKET_SERVICE_NAME, PANEL_ACTION_ORDER, PANEL_ID } from '../constants'
 import { locale } from '../locales'
-import { currentScope, hostsMarketPanel, readMarket } from '../service/market'
+import { readMarket } from '../service/market'
 import { store } from '../store'
 import { chooseWorkspace, pickSessionId, sessionSnapshotOf, workspaceSnapshotOf } from './extension-panel.utils'
 
 export const extensionPanelFeature = defineRegister<ClientContext>((controller, ctx, adapter) => {
   let panel: PanelHandle | undefined
-  // 同一份 profile 也服务普通浏览器标签：只有桌面 iframe 收编市场，浏览器保留其设置页入口。
-  const embedMarket = hostsMarketPanel(currentScope())
 
   // 市场收进本插槽后，它自带的设置页入口就是重复入口，撤下它；撤下前记住原状态，
   // 服务被撤下或本插件卸载时由 inject 返回的 disposer 还原。服务由另一个客户端插件
   // 发布，apply 顺序不保证，所以用 inject 等它到位。
+  // 没有 render 的旧版（1.47.0）readMarket 会返回 undefined，这里直接 return，
+  // 不会藏掉设置页入口。
   ctx.inject([MARKET_SERVICE_NAME], () => {
-    if (!embedMarket)
-      return
     const face = readMarket(ctx)
     if (face === undefined)
       return
@@ -66,7 +64,7 @@ export const extensionPanelFeature = defineRegister<ClientContext>((controller, 
     icon: props => <Icon as={Puzzle} size={props.size} />,
     render: () => (
       <PanelPage>
-        <ExtensionPanel createSkill={createSkill} market={embedMarket ? readMarket(ctx) : undefined} />
+        <ExtensionPanel createSkill={createSkill} market={readMarket(ctx)} />
       </PanelPage>
     ),
   })

@@ -64,6 +64,9 @@ Two artifacts: `lib/index.js` (host half, ESM) and `lib/client.js` (client half,
 3. **Own identity** — plugin id and route prefix are `dsh-mcp-studio` (`/dsh-mcp-studio/api/*`), so it coexists with the Tauri plugin.
 4. **"New skill" flow** — the current core moved navigation off `workspaces`; the panel now reuses an active
    session first and only falls back to the upstream path (see [CHANGELOG.md](CHANGELOG.md)).
+5. **Market tab (issue #1)** — upstream only embedded `dshmarket` inside the Tauri iframe (`window.parent !== window`).
+   This plugin *is* the extension-panel host, so Web / Desktop embed the market tab whenever `render` is published
+   and retract the duplicate settings-page entry.
 
 Tauri-only code (invoke / listen / iframe bridges) stays vendored but unreferenced: the bundle never touches `window.__TAURI__`.
 
@@ -91,7 +94,7 @@ Restart DSH once after a host-half update, then hard-refresh the browser.
 The sidebar shows **扩展** (Puzzle icon) with the original three-tab panel:
 **MCP** (list, add/edit, enable/disable, restart, connection check, copy, import scanning, JSON export/import),
 **Skills** (grouped list, search, enable/disable, view/edit SKILL.md, create, delete, open folder, refresh),
-**plugin market** (embedded when the market service is present).
+**plugin market** (embeds [`dshmarket`](https://github.com/dsh-market/dsh-market) when it publishes `render`, and hides the duplicate settings-page entry; no tab if the market is missing or too old).
 
 ## 🛠 Development
 
