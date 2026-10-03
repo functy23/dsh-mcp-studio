@@ -6,7 +6,7 @@ import { MARKET_SERVICE_NAME, PANEL_ACTION_ORDER, PANEL_ID } from '../constants'
 import { locale } from '../locales'
 import { readMarket } from '../service/market'
 import { store } from '../store'
-import { chooseWorkspace, pickSessionId, sessionSnapshotOf, workspaceSnapshotOf } from './extension-panel.utils'
+import { chooseWorkspace, createSkillSession, sessionSnapshotOf, workspaceSnapshotOf } from './extension-panel.utils'
 
 export const extensionPanelFeature = defineRegister<ClientContext>((controller, ctx, adapter) => {
   let panel: PanelHandle | undefined
@@ -25,26 +25,26 @@ export const extensionPanelFeature = defineRegister<ClientContext>((controller, 
     return () => face.setSettingsVisible(restore)
   })
 
-  // 技能创建器只需要一个有会话承载的预填：预填组件注册在每个会话输入框上
+  // 「新建技能」＝在**当前目录**（当前会话所属工作区）开一条新对话，再把 `/skill-creator `
+  // 预填进那条会话的输入框：预填组件注册在每个会话输入框上，按 sessionId 认领草稿
   // （见 `skill-creator-prefill` 的 `inject: (sessionId) => ({ sessionId })`）。
   //
-  // 上游只走「工作区 → connectWorkspace 开新会话」一条链路，但新版核心把导航能力从
-  // `workspaces` 上移走（没有 `connectWorkspace` / `startSession`），于是在 DSH Web /
-  // Desktop 上必然报「没有可用工作区」。这里改为优先复用活跃会话，只有拿不到任何会话时
-  // 才回退上游链路；`sessions.open` 同样按能力可选调用。
+  // 上游只有「工作区 → connectWorkspace 开新会话」一条链路；0.1.7 起导航搬到 `uiWorkspace`，
+  // 官方「在当前目录新建对话」的入口变成 `sessions.create({ workspaceId })`（适配层把
+  // `uiWorkspace.connectWorkspace` 投影回 `workspaces`，留作退级第二级）。
+  // 三级都拿不到会话时不再静默复用：把实际服务面打到控制台并报错，便于一次定位。
   const createSkill = async (): Promise<void> => {
-    const sessions = sessionSnapshotOf(adapter.sessions.list?.getSnapshot())
-    let sessionId = pickSessionId(adapter.sessions.list?.getSnapshot())
+    const sessionSnapshot = adapter.sessions.list?.getSnapshot()
+    const workspaceId = chooseWorkspace(
+      sessionSnapshotOf(sessionSnapshot),
+      workspaceSnapshotOf(adapter.workspaces.list?.getSnapshot()),
+    )
+    const sessionId = await createSkillSession(
+      { sessions: adapter.sessions, connectWorkspace: adapter.workspaces.connectWorkspace },
+      workspaceId,
+      sessionSnapshot,
+    )
     if (sessionId === undefined) {
-      const id = chooseWorkspace(sessions, workspaceSnapshotOf(adapter.workspaces.list?.getSnapshot()))
-      if (id !== undefined) {
-        const connected = await adapter.workspaces.connectWorkspace?.(id)
-        if (typeof connected === 'string' && connected !== '')
-          sessionId = connected
-      }
-    }
-    if (sessionId === undefined) {
-      // 拿不到任何会话时把实际服务面打到控制台：核心布局各代不同，便于一次定位。
       console.warn('[dsh-mcp-studio] createSkill: no session available', {
         sessions: adapter.sessions?.list?.getSnapshot?.(),
         workspaces: adapter.workspaces?.list?.getSnapshot?.(),
@@ -53,7 +53,7 @@ export const extensionPanelFeature = defineRegister<ClientContext>((controller, 
     }
     store.prefill.add(sessionId)
     panel?.close()
-    adapter.sessions.open?.(sessionId)
+    adapter.openSession(sessionId)
   }
 
   panel = definePanel(ctx, {
