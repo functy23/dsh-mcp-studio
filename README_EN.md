@@ -52,6 +52,10 @@ src/                  ← live code: everything reachable from the product entri
 
 vendor-archive/       ← vendored subtrees unreachable from the product entries (Tauri-only bridges,
                         tests of modules that were never vendored); out of build / typecheck / tests
+
+skills/               ← skills shipped with the package (host half mounts them via package.json "files")
+  skill-creator/        the /skill-creator prefill only works because it exists
+  find-skills/          byte-identical to the upstream release artifact
 ```
 
 Two artifacts: `lib/index.js` (host half, ESM) and `lib/client.js` (client half, DSH ModuleLoader CJS).
@@ -62,9 +66,17 @@ Two artifacts: `lib/index.js` (host half, ESM) and `lib/client.js` (client half,
 2. **Profile detection** — upstream only honoured `--profile`; `DSH_PROFILE`, `DSH_PROFILE_DIR` and the
    `<DSH_HOME>/profiles/<name>` launcher argument are now detected too, so MCP rows land in the right profile.
 3. **Own identity** — plugin id and route prefix are `dsh-mcp-studio` (`/dsh-mcp-studio/api/*`), so it coexists with the Tauri plugin.
-4. **"New skill" flow** — the current core moved navigation off `workspaces`; the panel now reuses an active
-   session first and only falls back to the upstream path (see [CHANGELOG.md](CHANGELOG.md)).
-5. **Market tab (issue #1)** — upstream only embedded `dshmarket` inside the Tauri iframe (`window.parent !== window`).
+4. **"New skill" flow** — upstream only ran "workspace → `connectWorkspace` opens a session", while 0.1.7 moved
+   navigation to `uiWorkspace`. The panel now walks four rungs: official `sessions.create({ workspaceId })` opens a
+   **new conversation in the workspace of the current session** → the adapter-projected `workspaces.connectWorkspace`
+   → a session that belongs to no workspace is followed by its `cwd` → reuse of the active session only when nothing
+   else can host the draft. Clicking "New skill" no longer hijacks the conversation you are writing in.
+5. **Bundled `skills/`** — `/skill-creator` is a *skill*, not a built-in command: the host recognises only entries
+   that really exist under a skill root. Upstream shipped anthropics/skills' `skill-creator` and vercel-labs/skills'
+   `find-skills` through `files: ["skills"]`; this repo restores both, byte-identical to the upstream release
+   artifact. Without them the prefilled `/skill-creator` is plain text — no highlight, no click-through, and nothing
+   loads on send.
+6. **Market tab (issue #1)** — upstream only embedded `dshmarket` inside the Tauri iframe (`window.parent !== window`).
    This plugin *is* the extension-panel host, so Web / Desktop embed the market tab whenever `render` is published
    and retract the duplicate settings-page entry.
 
@@ -93,7 +105,8 @@ Restart DSH once after a host-half update, then hard-refresh the browser.
 
 The sidebar shows **扩展** (Puzzle icon) with the original three-tab panel:
 **MCP** (list, add/edit, enable/disable, restart, connection check, copy, import scanning, JSON export/import),
-**Skills** (grouped list, search, enable/disable, view/edit SKILL.md, create, delete, open folder, refresh),
+**Skills** (grouped list, search, enable/disable, view/edit SKILL.md, create — opens a new conversation in the
+current workspace with `/skill-creator` prefilled — delete, open folder, refresh),
 **plugin market** (embeds [`dshmarket`](https://github.com/dsh-market/dsh-market) when it publishes `render`, and hides the duplicate settings-page entry; no tab if the market is missing or too old).
 
 <p align="center">

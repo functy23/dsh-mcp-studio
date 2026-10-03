@@ -55,6 +55,10 @@ src/                          ← 活代码：从产物入口走得到的部分
 
 vendor-archive/               ← 走不到产物入口的 vendor 子树（Tauri 专属桥、未搬运模块的测试）
                                 不参与构建 / typecheck / 测试，只作上游对照
+
+skills/                       ← 随包发布的技能（host 半按 package.json 的 files 一起带上）
+  skill-creator/                「新建技能」预填的 /skill-creator 靠它成立，见下
+  find-skills/                  与上游发布产物逐字节相同
 ```
 
 产物只有两个文件：`lib/index.js`（host 半，ESM）与 `lib/client.js`（client 半，DSH ModuleLoader CJS）。
@@ -70,8 +74,15 @@ vendor-archive/               ← 走不到产物入口的 vendor 子树（Tauri
 
 此外还有面板行为修复（依赖新版核心的导航能力变化，见 [CHANGELOG.md](CHANGELOG.md)）：
 
-4. **「新建技能」链路**：新版核心把导航能力从 `workspaces` 上移走，改为优先复用活跃会话，拿不到会话才回退上游链路。
-5. **插件市场 tab（Issue #1）**：上游用 iframe（`window.parent !== window`）才收编 `dshmarket`，那是给 Tauri 壳用的。本插件就是扩展面板宿主，Web / Desktop 上只要 `dshmarket` 发布了 `render` 就嵌进「市场」tab，并撤下设置页重复入口。
+4. **「新建技能」开新对话**：上游只走「工作区 → `connectWorkspace` 开新会话」，而 0.1.7 起导航搬到了 `uiWorkspace`。
+   现在按四级退级：官方 `sessions.create({ workspaceId })` 在**当前会话所属工作区**新建一条对话 → 适配层投影回的
+   `workspaces.connectWorkspace` → 会话不属于任何工作区时按它的 `cwd` 建 → 实在无处可建才复用活跃会话。
+   点一次「新建技能」不再抢走你正在写的那条对话。
+5. **随包技能 `skills/`**：`/skill-creator` 是一条**技能**，不是内置命令——宿主只把技能目录里真实存在的条目
+   认成 `/名字`。上游用 `files: ["skills"]` 打包了 anthropics/skills 的 `skill-creator` 与 vercel-labs/skills 的
+   `find-skills`，本仓库按上游发布产物逐字节补回；缺了它，输入框里预填的 `/skill-creator` 就是普通文本：
+   不高亮、点不开、发送后也不会加载任何技能。
+6. **插件市场 tab（Issue #1）**：上游用 iframe（`window.parent !== window`）才收编 `dshmarket`，那是给 Tauri 壳用的。本插件就是扩展面板宿主，Web / Desktop 上只要 `dshmarket` 发布了 `render` 就嵌进「市场」tab，并撤下设置页重复入口。
 
 Tauri 专属部分（`dsh-tauri/client` 的 invoke / listen / iframe 消息桥、桌面侧边栏注入）**保留在 vendor 里但不被引用**，
 所以产物不会访问 `window.__TAURI__`，在 Web 与 Desktop 上同样工作。
@@ -111,7 +122,7 @@ pnpm install --dir ~/.dsh/profiles/<profile>
 | Tab | 能力 |
 | --- | --- |
 | **MCP** | 服务器列表（项目级 / 全局、启用状态、传输方式、URL / 命令）、新增与编辑表单、启用 / 停用、重启、连接检查、复制片段、从其他 DSH profile 或 Claude / Cursor / Windsurf / VS Code 配置**导入扫描**、JSON 导出导入 |
-| **Skills** | 技能列表（按来源分组）、搜索、启用 / 停用、查看与编辑 SKILL.md、新建技能、删除、打开目录、刷新 |
+| **Skills** | 技能列表（按来源分组）、搜索、启用 / 停用、查看与编辑 SKILL.md、新建技能（在当前工作区开一条新对话并预填 `/skill-creator`）、删除、打开目录、刷新 |
 | **插件市场** | 已安装 [`dshmarket`](https://github.com/dsh-market/dsh-market) 且其客户端提供 `render` 时，把市场面板嵌进本 tab，并藏掉设置页里的重复入口；未安装或旧版没有 `render` 时不出现该 tab，设置页入口保留 |
 
 技能启停沿用上游策略：写 SKILL.md 的 `user-invocable` 策略位，不新增旁路状态。

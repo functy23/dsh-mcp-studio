@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.0.6] — 2026-10-03
+
+### Fixed
+
+- **「新建技能」不再抢走当前对话**：1.0.3 起这一链路是「优先复用活跃会话」，于是点一次「新建技能」，
+  草稿直接落进你正在写的那条对话（覆盖输入框里的内容），而不是开一条新的。现在按四级退级，顺序即语义：
+  1. 官方 `sessions.create({ workspaceId })` —— 0.1.7 的「在当前目录新建对话」入口，在当前会话所属工作区
+     开一条新会话并在 resolve 前发布进会话目录，返回值直接用于预填（核心 `dsh-client-ui-workspace` 的
+     `reuseOrCreateBlank` 走的也是它）；
+  2. 适配层从 `uiWorkspace` 投影回的 `workspaces.connectWorkspace` —— 上游写法（0.1.7 起导航从
+     `workspaces` 搬到 `uiWorkspace`，适配层的 legacy 迁移已把它投影回原位，因此这条退级仍然可用）；
+  3. 当前会话不属于任何工作区时（桌面壳的「未分组」），用它的 `cwd` 建会话——同样落在当前目录；
+  4. 以上都拿不到才复用活跃会话，保证按钮仍有草稿可写。
+  前几级抛错不再静默降级：错误照原样冒到面板的「无法启动技能创建器」提示上，避免同一个坑再被掩盖一次。
+- **「/skill-creator」不是命令，是技能**：预填的 `/skill-creator ` 在输入框里不高亮、点不开、发送后也不加载任何东西。
+  根因不是输入法也不是高亮逻辑——宿主只把技能目录里**真实存在**的条目认成 `/名字`（`@deepseek-ai/dsh-client-ui-skill`：
+  「Ordinary-session candidates come from the `skills/list` Remote」），而上游 `dsh-tauri-panel-extension` 用
+  `package.json` 的 `files: ["skills"]` 随包带了 `skill-creator`（anthropics/skills）与 `find-skills`
+  （vercel-labs/skills），搬运时整个目录连同 `files` 项一起丢了：1.0.5 的包里既没有 `skills/`，`files` 也没有这一项，
+  host 半的 `packagedSkillsDir()`（`<包根>/skills`）因此不存在，`provider.ts` 的 `existsSync` 过滤把它摘掉，
+  技能目录里从来没有 `skill-creator`。
+  现已按上游发布产物逐字节补回 `skills/skill-creator` 与 `skills/find-skills`（含各自的 LICENSE，见
+  THIRD_PARTY_NOTICES.md），`files` 同步补 `skills`。
+
+### Added
+
+- `src/panel/client/register/extension-panel.utils.test.ts`：18 条用例覆盖会话/工作区快照投影与四级退级
+  （含「有 `sessions.create` 时**不得**调用 `connectWorkspace`、不得复用活跃会话」这条回归断言）。
+
 ## [1.0.5] — 2026-10-01
 
 ### Fixed
