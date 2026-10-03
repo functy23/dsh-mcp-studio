@@ -48,6 +48,16 @@ terms, these additional terms prevail.
 
 Copyright (c) 2026 deepseek-harness-desktop contributors
 
+## anthropics/skills / vercel-labs/skills（随包技能）
+
+- `skills/skill-creator` — <https://github.com/anthropics/skills>，Apache-2.0，`LICENSE.txt` 一并保留
+- `skills/find-skills` — <https://github.com/vercel-labs/skills>，MIT，`LICENSE` 一并保留
+- 两个目录都取自上游 `dsh-tauri-panel-extension` 的发布产物（`files: ["skills"]`），**逐字节相同**
+
+「新建技能」预填的 `/skill-creator` 是一条**技能**而不是内置命令：宿主只把技能目录里真实存在的
+条目认成 `/名字`，所以这个目录必须随包发布，否则输入框里的 `/skill-creator` 只是普通文本
+（不高亮、点不开、发送后也不会加载任何技能）。
+
 ---
 
 ## 本项目（dsh-mcp-studio）的改动
@@ -56,5 +66,7 @@ Copyright (c) 2026 deepseek-harness-desktop contributors
 - `src/panel/host/service/profile.ts`：补充 `DSH_PROFILE` / `DSH_PROFILE_DIR` / 启动参数探测，使其在 DSH Web / Desktop 上正确解析当前 profile。
 - 插件 id 与 HTTP 路由前缀改为 `dsh-mcp-studio`（`/dsh-mcp-studio/api/*`），以避免与上游插件双挂载、可共存。
 - 移除对 Tauri 运行时的引用路径：Tauri 专属模块（invoke / listen / iframe 桥）保留在 vendor 中但不被任何入口引用，产物不会访问 `window.__TAURI__`。
+- 补回上游随包的 `skills/`（`skill-creator` + `find-skills`，与上游发布产物逐字节相同；
+  `package.json` 的 `files` 同步补 `skills`），见上。
 
 除上述改动外，界面与 host 逻辑版权归上游作者所有。
