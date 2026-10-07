@@ -8,10 +8,12 @@ import type {
   SkillSourceEntry,
 } from './skills.types'
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { defineService } from 'dsh-tauri'
 import { orderBy } from 'lodash-es'
-import { isAbsolute, relative, resolve, sep } from 'pathe'
-import { SKILL_NAME_RE, SKILLS_DATA_DIR } from '../config/constants'
+import { isAbsolute, join, relative, resolve, sep } from 'pathe'
+import { agentSourceName, SKILL_SOURCES } from '../../shared/skill-sources'
+import { packagedSkillsDir, SKILL_NAME_RE, SKILLS_DATA_DIR } from '../config/constants'
 import { getCurrentHostInstance } from '../config/runtime'
 import { storage } from '../storage'
 import { skillDir, skillFilePath } from '../utils/paths.utils'
@@ -139,14 +141,35 @@ function repositoryForSkill(
   }
 }
 
+/**
+ * `custom` 来源的细分。
+ *
+ * DSH 把插件通过 `customSkillDirs` 注册的目录一律记成 `custom`，但同一个 `custom` 里
+ * 可能同时躺着本插件随包的技能、以及别的 agent 工具的技能目录。按技能的实际目录把它们
+ * 拆开，界面才不会出现「一个标签混了两种来源」。
+ */
+function customSourceDetail(skill: HostSkill): string | undefined {
+  if (skill.source !== 'custom')
+    return undefined
+  const dir = skill.resourceBase?.kind === 'directory' ? skill.resourceBase.path : undefined
+  if (dir === undefined)
+    return undefined
+  if (pathWithin(dir, packagedSkillsDir()))
+    return 'bundled'
+  const spec = SKILL_SOURCES.find(candidate => pathWithin(dir, join(homedir(), candidate.directory)))
+  return spec === undefined ? undefined : agentSourceName(spec.key)
+}
+
 async function toSkillRow(skill: HostSkill, entries: SkillSourceEntry[]): Promise<SkillRow> {
   const dir = skill.resourceBase?.kind === 'directory' ? skill.resourceBase.path : undefined
   const repository = repositoryForSkill(skill, entries)
+  const sourceDetail = customSourceDetail(skill)
   return {
     ...skill,
     editable: await skillWritable(skill, dir),
     removable: skill.source === 'user-dsh',
     ...(dir !== undefined ? { dir } : {}),
+    ...(sourceDetail !== undefined ? { sourceDetail } : {}),
     policyEditable: dir !== undefined,
     ...(repository !== undefined ? { repository } : {}),
   }

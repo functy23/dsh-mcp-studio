@@ -5,6 +5,7 @@ import { defineEventHandler, readBody } from 'dsh-tauri'
 import { SKILLS_DATA_DIR } from '../../../config/constants'
 import { opener } from '../../../service/opener'
 import { skills } from '../../../service/skills'
+import { skillSourceDir } from '../../../utils/paths.utils'
 
 const SKILL_FILE_PATTERN = /[/\\]SKILL\.md$/
 
@@ -21,6 +22,16 @@ export default defineEventHandler<EventHandlerRequest, Promise<ActionResult | { 
     if (body.target === 'user-skills' || body.target === 'plugin-state') {
       dir = SKILLS_DATA_DIR
       mkdirSync(dir, { recursive: true })
+    }
+    else if (body.target === 'source') {
+      if (typeof body.source !== 'string') {
+        event.res.status = 400
+        return { error: 'source is required' }
+      }
+      dir = skillSourceDir(body.source)
+      // 只有 DSH 自己的技能目录才兜底创建；外部工具的目录不存在时如实报错，不凭空造。
+      if (dir === SKILLS_DATA_DIR)
+        mkdirSync(dir, { recursive: true })
     }
     else if (body.target === 'skill') {
       if (typeof body.name !== 'string') {

@@ -5,6 +5,7 @@ import { defineService } from 'dsh-tauri'
 import { compact, filter, isEmpty, isObject, pickBy, uniqBy } from 'lodash-es'
 import { join } from 'pathe'
 import { parse as parseToml } from 'smol-toml'
+import { SKILL_SOURCES } from '../../shared/skill-sources'
 
 const CLAUDE_MCP_FILES = ['.claude/settings.json', '.claude.json'] as const
 
@@ -14,7 +15,17 @@ const GEMINI_MCP_FILE = '.gemini/settings.json'
 
 const CODEX_MCP_FILE = '.codex/config.toml'
 
-const AGENT_SKILL_DIRECTORIES = ['.claude/skills', '.codex/skills'] as const
+/**
+ * 本插件要替 DSH 兜住的技能目录。
+ *
+ * 目录表在 `../shared/skill-sources`（唯一真相源）；这里只把相对路径拼成绝对路径，并跳过
+ * 官方 provider 已经扫过、已有准确 source 的那几个目录。
+ */
+function agentSkillRoots(home: string = homedir()): Array<{ key: string, path: string }> {
+  return SKILL_SOURCES
+    .filter(spec => spec.official === undefined)
+    .map(spec => ({ key: spec.key, path: join(home, spec.directory) }))
+}
 
 export const agents = defineService({
   resolve(home: string = homedir()): ImportedServer[] {
@@ -25,8 +36,8 @@ export const agents = defineService({
   },
 
   peek(home: string = homedir()): string[] {
-    return AGENT_SKILL_DIRECTORIES
-      .map(directory => join(home, directory))
+    return agentSkillRoots(home)
+      .map(root => root.path)
       .filter(path => existsSync(path))
   },
 })
