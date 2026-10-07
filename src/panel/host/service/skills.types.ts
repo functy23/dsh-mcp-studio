@@ -40,6 +40,8 @@ export type SkillRow = HostSkill & {
   editable: boolean
   removable: boolean
   dir?: string
+  /** `custom` 来源的细分（随包技能 / 某个 agent 工具的目录），只用于显示。 */
+  sourceDetail?: string
   policyEditable: boolean
   repository?: SkillRepositoryMetadata
 }

@@ -1,7 +1,7 @@
 import type { EventHandlerRequest } from 'dsh-tauri'
 import type { SkillInput } from '../../service/skills.types'
-import type { ActionResult, SkillSaveBody } from '../index.types'
-import { defineEventHandler, readBody } from 'dsh-tauri'
+import type { ActionResult, ExtensionRouteDeps, SkillSaveBody } from '../index.types'
+import { defineEventHandler, dshRouteDepsOf, readBody } from 'dsh-tauri'
 import { join } from 'pathe'
 import { SKILL_FILE_NAME } from '../../config/constants'
 import { skills } from '../../service/skills'
@@ -34,6 +34,9 @@ export default defineEventHandler<EventHandlerRequest, Promise<ActionResult | { 
     else {
       skills.save(input)
     }
+    // 新增/改名/改描述都会改变 `/` 菜单能搜到什么，走 remount 一并刷新宿主缓存与
+    // 客户端 `/` 缓存（remountProvider 内部带 notifySkillCatalog）。
+    await dshRouteDepsOf<ExtensionRouteDeps>(event)?.remountProvider()
     return { ok: true, name: input.name }
   }
   catch (error) {

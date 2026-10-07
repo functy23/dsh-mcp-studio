@@ -21,6 +21,8 @@ export interface SkillRowView {
   whenToUse?: string
   invocation: { modelInvocable: boolean, userInvocable: boolean }
   source: string
+  /** `custom` 来源的细分，由宿主按技能目录算出；显示与分组优先于 `source`。 */
+  sourceDetail?: string
   provider: string
   editable: boolean
   removable: boolean
@@ -133,9 +135,11 @@ export interface SkillPolicyBody {
 }
 
 export interface SkillOpenBody {
-  target: 'user-skills' | 'plugin-state' | 'skill' | 'root'
+  target: 'user-skills' | 'plugin-state' | 'skill' | 'root' | 'source'
   name?: string
   id?: string
+  /** `target: 'source'` 时要打开的来源名（与技能列表里的 source 同义）。 */
+  source?: string
 }
 
 export interface RootAddBody {

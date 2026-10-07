@@ -10,7 +10,7 @@ export interface SkillEditorState {
   content: string
 }
 
-export type OpenTarget = { target: 'user-skills' } | { target: 'skill', name: string }
+export type OpenTarget = { target: 'user-skills' } | { target: 'skill', name: string } | { target: 'source', source: string }
 
 export interface SkillsTabProps {
   t: Translate
