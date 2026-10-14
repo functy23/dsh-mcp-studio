@@ -45,7 +45,7 @@ Tauri 桌面版（[deepseek-harness-desktop](https://github.com/dsh-tauri-desk/d
 src/                          ← 活代码：从产物入口走得到的部分
 ├── panel/                    ← dsh-tauri-panel-extension（原样搬运）
 │   ├── host/                 service（mcp / skills / agents / repos / restart / rmtree）、routes（mcp / skill / import / roots / host）
-│   ├── client/               components（mcp-tab / mcp-editor-form / mcp-import-dialog / skills-tab / extension-panel / market-tab）、
+│   ├── client/               components（mcp-tab / mcp-editor-form / mcp-import-dialog / skills-tab / skills-manager-tab / extension-panel / market-tab）、
 │   │                         register（extension-panel / skill-creator-prefill / styles）、locales、styles、store、apis
 │   └── shared/
 ├── vendor/
@@ -83,6 +83,7 @@ skills/                       ← 随包发布的技能（host 半按 package.js
    `find-skills`，本仓库按上游发布产物逐字节补回；缺了它，输入框里预填的 `/skill-creator` 就是普通文本：
    不高亮、点不开、发送后也不会加载任何技能。
 6. **插件市场 tab（Issue #1）**：上游用 iframe（`window.parent !== window`）才收编 `dshmarket`，那是给 Tauri 壳用的。本插件就是扩展面板宿主，Web / Desktop 上只要 `dshmarket` 发布了 `render` 就嵌进「市场」tab，并撤下设置页重复入口。
+7. **技能管理 tab（收编 `dsh-skills-manager`）**：与市场 tab 同款机制——对方客户端发布 `skillsManager` 嵌入面（`ctx.provide`，含 `render` / `settingsVisible` / `setSettingsVisible`）后，把它的多 Agent 技能管理界面嵌进面板，并撤下它自己的「设置 → 技能」入口；判据同样是能力探测，对方缺席或旧版时 tab 不出现、其设置页入口不动。
 
 Tauri 专属部分（`dsh-tauri/client` 的 invoke / listen / iframe 消息桥、桌面侧边栏注入）**保留在 vendor 里但不被引用**，
 所以产物不会访问 `window.__TAURI__`，在 Web 与 Desktop 上同样工作。
@@ -124,6 +125,11 @@ pnpm install --dir ~/.dsh/profiles/<profile>
 | **MCP** | 服务器列表（项目级 / 全局、启用状态、传输方式、URL / 命令）、新增与编辑表单、启用 / 停用、重启、连接检查、复制片段、从其他 DSH profile 或 Claude / Cursor / Windsurf / VS Code 配置**导入扫描**、JSON 导出导入 |
 | **Skills** | 技能列表（按来源分组）、搜索、启用 / 停用、查看与编辑 SKILL.md、新建技能（在当前工作区开一条新对话并预填 `/skill-creator`）、删除、打开目录、刷新 |
 | **插件市场** | 已安装 [`dshmarket`](https://github.com/dsh-market/dsh-market) 且其客户端提供 `render` 时，把市场面板嵌进本 tab，并藏掉设置页里的重复入口；未安装或旧版没有 `render` 时不出现该 tab，设置页入口保留 |
+| **技能管理** | 已安装 [`@michengai/dsh-skills-manager`](https://github.com/MichengAI/dsh-skills-manager) 且其客户端发布 `skillsManager` 嵌入面时，把它的多 Agent 技能管理界面（21 个来源、仓库安装、分类、回收站）嵌进本 tab，并藏掉它自己的「设置 → 技能」入口；未安装或旧版没有嵌入面时不出现该 tab，对方设置页入口保留 |
+
+「Skills」与「技能管理」是两个不同的东西，有意并列、不合并：前者是本插件自带的官方技能列表，启停写 SKILL.md 的
+`user-invocable` 策略位，**决定 DSH 是否加载该技能**；后者是第三方插件的全量管理视图，它对自己 21 个来源的启停
+记在自己的状态文件里，不改动源文件。
 
 技能启停沿用上游策略：写 SKILL.md 的 `user-invocable` 策略位，不新增旁路状态。
 

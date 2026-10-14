@@ -1,5 +1,21 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- **「技能管理」tab：收编 `@michengai/dsh-skills-manager` 的界面**。机制与「市场」tab 完全同款——
+  对方客户端经 `ctx.provide("skillsManager", face)` 发布嵌入面（`render` / `settingsVisible` /
+  `setSettingsVisible`），本插件在 `ctx.inject([SKILLS_MANAGER_SERVICE_NAME])` 里撤掉它自己的
+  「设置 → 技能」重复入口（disposer 还原原状态），面板里以 `SkillsManagerTab` 渲染 `face.render()`。
+  判据是能力探测（只看 `render` 是否可调用），不做版本嗅探：对方未安装 / 旧版没有嵌入面时，
+  tab 不出现，对方的设置页入口也不动，本插件行为与 1.0.6 一致。
+- 「Skills」与「技能管理」有意并列、不合并：前者的开关写 SKILL.md 的 `user-invocable` 策略位
+  （决定 DSH 是否加载），后者是第三方插件的多 Agent 来源管理视图（启停记在它自己的状态文件里，
+  不改源文件）。混在一起会同时违反本仓库「不新增旁路状态文件」的约束和对方「不改外部 Agent
+  源文件」的承诺。
+- `src/panel/client/service/skills-manager.test.ts`：与 `market.test.ts` 同构的 7 条能力判据测试。
+
 ## [1.0.6] — 2026-10-03
 
 ### Fixed

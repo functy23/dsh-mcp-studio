@@ -107,7 +107,12 @@ The sidebar shows **扩展** (Puzzle icon) with the original three-tab panel:
 **MCP** (list, add/edit, enable/disable, restart, connection check, copy, import scanning, JSON export/import),
 **Skills** (grouped list, search, enable/disable, view/edit SKILL.md, create — opens a new conversation in the
 current workspace with `/skill-creator` prefilled — delete, open folder, refresh),
-**plugin market** (embeds [`dshmarket`](https://github.com/dsh-market/dsh-market) when it publishes `render`, and hides the duplicate settings-page entry; no tab if the market is missing or too old).
+**plugin market** (embeds [`dshmarket`](https://github.com/dsh-market/dsh-market) when it publishes `render`, and hides the duplicate settings-page entry; no tab if the market is missing or too old),
+**skill manager** (embeds the full management UI of [`@michengai/dsh-skills-manager`](https://github.com/MichengAI/dsh-skills-manager) — 21 agent skill sources, repository installs, categories, trash — when that plugin publishes its `skillsManager` embed face, and hides its own "Settings → Skills" entry; no tab and no change to that plugin's entry if it is missing or too old).
+
+Skills tab and the Skill Manager tab are deliberately separate: the former lists official DSH skills and its
+toggles write the `user-invocable` policy bit in SKILL.md (what DSH actually loads); the latter is a third-party
+view whose toggles live in its own state file and never touch the source files.
 
 <p align="center">
   <img src="assets/screenshot-market.png" alt="Extension panel · Market" width="720" /><br/>
