@@ -2,9 +2,10 @@ import type { ClientContext, PanelHandle } from 'dsh-tauri/client'
 import { Icon, PanelPage, Puzzle } from 'dsh-tauri-ui/client'
 import { definePanel, defineRegister } from 'dsh-tauri/client'
 import { ExtensionPanel } from '../components/extension-panel'
-import { MARKET_SERVICE_NAME, PANEL_ACTION_ORDER, PANEL_ID } from '../constants'
+import { MARKET_SERVICE_NAME, PANEL_ACTION_ORDER, PANEL_ID, SKILLS_MANAGER_SERVICE_NAME } from '../constants'
 import { locale } from '../locales'
 import { readMarket } from '../service/market'
+import { readSkillsManager } from '../service/skills-manager'
 import { store } from '../store'
 import { chooseWorkspace, createSkillSession, sessionSnapshotOf, workspaceSnapshotOf } from './extension-panel.utils'
 
@@ -18,6 +19,17 @@ export const extensionPanelFeature = defineRegister<ClientContext>((controller, 
   // 不会藏掉设置页入口。
   ctx.inject([MARKET_SERVICE_NAME], () => {
     const face = readMarket(ctx)
+    if (face === undefined)
+      return
+    const restore = face.settingsVisible()
+    face.setSettingsVisible(false)
+    return () => face.setSettingsVisible(restore)
+  })
+
+  // skills-manager 同理：嵌入面可用（新版才 provide）才撤它自己的「设置 → 技能」入口；
+  // 对方没有发布 face（未安装 / 旧版）时一段都不执行，它的设置页入口原样保留。
+  ctx.inject([SKILLS_MANAGER_SERVICE_NAME], () => {
+    const face = readSkillsManager(ctx)
     if (face === undefined)
       return
     const restore = face.settingsVisible()
@@ -64,7 +76,7 @@ export const extensionPanelFeature = defineRegister<ClientContext>((controller, 
     icon: props => <Icon as={Puzzle} size={props.size} />,
     render: () => (
       <PanelPage>
-        <ExtensionPanel createSkill={createSkill} market={readMarket(ctx)} />
+        <ExtensionPanel createSkill={createSkill} market={readMarket(ctx)} skillsManager={readSkillsManager(ctx)} />
       </PanelPage>
     ),
   })

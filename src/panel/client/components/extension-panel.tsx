@@ -1,17 +1,21 @@
 import type { ReactElement } from 'react'
 import type { MarketFace } from '../service/market.types'
+import type { SkillsManagerFace } from '../service/skills-manager.types'
 import { SegmentedControl } from 'dsh-tauri-ui/client'
 import { useEffect, useId, useState } from 'react'
 import { locale } from '../locales'
 import { resolveActiveTab } from './extension-panel.utils'
 import { MarketTab } from './market-tab'
 import { McpTab } from './mcp-tab'
+import { SkillsManagerTab } from './skills-manager-tab'
 import { SkillsTab } from './skills-tab'
 
 export interface ExtensionPanelProps {
   createSkill: () => Promise<void>
   /** 市场未安装 / 未发布 `render` 时为 undefined：此时不出现市场标签页。 */
   market: MarketFace | undefined
+  /** skills-manager 未安装 / 未发布嵌入面时为 undefined：不出现技能管理标签页。 */
+  skillsManager: SkillsManagerFace | undefined
 }
 
 interface ExtensionTab {
@@ -20,15 +24,21 @@ interface ExtensionTab {
   render: () => ReactElement
 }
 
-export function ExtensionPanel({ createSkill, market }: ExtensionPanelProps): ReactElement {
+export function ExtensionPanel({ createSkill, market, skillsManager }: ExtensionPanelProps): ReactElement {
   const t = locale.text
   const tabsId = useId()
   const marketFace = market
+  const managerFace = skillsManager
   const rows: ExtensionTab[] = [
     ...(marketFace === undefined
       ? []
       : [{ id: 'market', label: t('marketTab'), render: () => <MarketTab market={marketFace} /> }]),
     { id: 'skills', label: t('skillsTab'), render: () => <SkillsTab t={t} createSkill={createSkill} /> },
+    // 官方技能列表（skills）与第三方全量管理（skillsManager）并排、不合并：前者写 SKILL.md
+    // 策略位、决定 DSH 是否加载，后者管 21 个 Agent 来源 + 仓库安装/回收站，职责不同。
+    ...(managerFace === undefined
+      ? []
+      : [{ id: 'skillsManager', label: t('skillsManagerTab'), render: () => <SkillsManagerTab manager={managerFace} /> }]),
     { id: 'mcp', label: t('mcpTab'), render: () => <McpTab t={t} /> },
   ]
   const initialId = rows[0]?.id ?? 'skills'
